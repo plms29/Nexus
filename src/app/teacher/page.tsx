@@ -9,6 +9,8 @@ import clsx from 'clsx';
 import QuizSetup from '@/components/teacher/QuizSetup';
 import EssaySetup from '@/components/teacher/EssaySetup';
 import QuestionBank from '@/components/teacher/QuestionBank';
+import { AssignmentForm } from '@/components/teacher/AssignmentForm';
+import { InterventionModal } from '@/components/teacher/InterventionModal';
 
 type SidebarTab = 'setup' | 'question-bank' | 'saved-tests';
 type TaskType = 'quiz' | 'essay' | 'chart';
@@ -107,35 +109,8 @@ export default function Dashboard() {
         <main className="flex-1 min-w-0">
           
           {activeTab === 'setup' && (
-            <div className="space-y-6">
-              {/* Task Type Selector */}
-              <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-slate-900 font-bold">Loại bài tập</h3>
-                  <p className="text-xs text-slate-500 mt-1">Chọn định dạng thiết lập cho bài tập này</p>
-                </div>
-                <div className="relative">
-                  <select 
-                    value={taskType}
-                    onChange={(e) => setTaskType(e.target.value as TaskType)}
-                    className="appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm font-medium rounded-xl pl-4 pr-10 py-2.5 outline-none focus:border-indigo-500 shadow-sm cursor-pointer"
-                  >
-                    <option value="quiz">Trắc nghiệm (Quiz)</option>
-                    <option value="essay">Tự luận (Essay)</option>
-                    <option value="chart">Biểu đồ / Tự do</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Render Setup based on Task Type */}
-              {taskType === 'quiz' && <QuizSetup />}
-              {taskType === 'essay' && <EssaySetup />}
-              {taskType === 'chart' && (
-                <div className="text-center py-20 bg-white border border-slate-200 shadow-sm rounded-2xl">
-                  <p className="text-slate-500">Giao diện thiết lập Biểu đồ đang được phát triển...</p>
-                </div>
-              )}
+            <div className="mt-2">
+              <AssignmentForm />
             </div>
           )}
 
@@ -146,7 +121,8 @@ export default function Dashboard() {
               <p className="text-slate-500">Danh sách đề thi đã lưu sẽ hiển thị ở đây...</p>
             </div>
           )}
-
+          
+          <InterventionModal />
         </main>
       </div>
     </div>

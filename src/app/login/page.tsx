@@ -39,13 +39,22 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_url') {
-        console.warn('Supabase URL not set. Using mock login.');
+      const isDemoEmail = email.includes('admin') || email.includes('teacher') || email.includes('student');
+      const isMockMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_url';
+
+      // Use mock login if Supabase is not configured, or if it's a demo email and password is empty or 'demo'
+      if (isMockMode || (isDemoEmail && (!password || password === 'demo' || password === '123456' || password === 'password'))) {
+        console.warn('Using mock login.');
         // Simulate network delay for nice button loading animation
         await new Promise(resolve => setTimeout(resolve, 800));
         
+        const isMockOnboardingDone = localStorage.getItem('examload_onboarding_done') === 'true';
+
         if (email.includes('admin')) router.push('/admin');
-        else if (email.includes('teacher')) router.push('/teacher/onboarding/step-1');
+        else if (email.includes('teacher')) {
+          if (isMockOnboardingDone) router.push('/teacher');
+          else router.push('/teacher/onboarding/step-1');
+        }
         else router.push('/student');
         return;
       }
@@ -65,9 +74,22 @@ export default function LoginPage() {
 
       if (userError) throw userError;
 
-      if (userData.role === 'admin') router.push('/admin');
-      else if (userData.role === 'teacher') router.push('/teacher/onboarding/step-1');
-      else router.push('/student');
+      if (userData.role === 'admin') {
+        router.push('/admin');
+      } else if (userData.role === 'teacher') {
+        const { data: profile, error: profileError } = await supabase
+          .from('teacher_profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        const isMockOnboardingDone = localStorage.getItem('examload_onboarding_done') === 'true';
+
+        if (profile || (profileError?.code === 'PGRST205' && isMockOnboardingDone)) router.push('/teacher');
+        else router.push('/teacher/onboarding/step-1');
+      } else {
+        router.push('/student');
+      }
 
     } catch (err: any) {
       setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');

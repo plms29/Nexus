@@ -2,9 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
-import { ArrowLeft, Sparkles, Check } from 'lucide-react';
+import { ArrowLeft, Sparkles, Check, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const classOptions = {
   10: ['10A1', '10A2', '10D1', '10D2'],
@@ -16,6 +17,7 @@ export default function Step3Page() {
   const router = useRouter();
   const { state, updateState } = useOnboarding();
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const toggleClass = (className: string) => {
     const current = state.selectedClasses;
@@ -27,15 +29,47 @@ export default function Step3Page() {
     setError('');
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (state.selectedClasses.length === 0) {
       setError('Vui lòng chọn ít nhất một lớp học');
       return;
     }
     
-    // Simulate finishing onboarding and redirecting to dashboard
-    console.log('Onboarding complete:', state);
-    router.push('/teacher');
+    setSaving(true);
+    setError('');
+
+    try {
+      const isMockMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_url';
+      
+      if (!isMockMode) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { error: dbError } = await supabase.from('teacher_profiles').upsert({
+            id: session.user.id,
+            name: state.teacherName,
+            school: state.schoolName,
+            subject_group: state.subjectGroup,
+            subjects: state.selectedSubjects,
+            classes: state.selectedClasses,
+          });
+          if (dbError && dbError.code !== 'PGRST205') throw dbError;
+          if (dbError?.code === 'PGRST205') {
+            console.warn('teacher_profiles table does not exist. Falling back to local storage only.');
+          }
+        }
+      }
+
+      // Set local storage flag for mock bypass
+      localStorage.setItem('examload_onboarding_done', 'true');
+      
+      console.log('Onboarding complete:', state);
+      router.push('/teacher');
+    } catch (err: any) {
+      setError(err.message || 'Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.');
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -88,10 +122,11 @@ export default function Step3Page() {
         </button>
         <button 
           onClick={handleFinish}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-6 rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-emerald-500/20"
+          disabled={saving}
+          className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed text-white font-medium py-2.5 px-6 rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-emerald-500/20"
         >
-          <Sparkles className="w-4 h-4" />
-          Xác nhận đăng nhập
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {saving ? 'Đang lưu...' : 'Xác nhận đăng nhập'}
         </button>
       </div>
     </div>

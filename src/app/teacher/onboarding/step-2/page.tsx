@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
-import { ArrowLeft, ArrowRight, Calculator, Atom, FlaskConical, Dna, BookOpen, Languages, Scale, Globe, Hourglass, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calculator, Atom, FlaskConical, Dna, BookOpen, Languages, Scale, Globe, Hourglass, Check, Monitor, Cpu, Dumbbell, Shield, Music, Palette } from 'lucide-react';
 import clsx from 'clsx';
 import { useState } from 'react';
 
@@ -12,13 +12,25 @@ const subjectsData = {
     { id: 'Vật lý', name: 'Vật lý', desc: 'Cơ học, Nhiệt học, Điện từ học, Quang học và Vật lý hạt nhân', icon: Atom, color: 'text-cyan-600', bg: 'bg-cyan-100' },
     { id: 'Hóa học', name: 'Hóa học', desc: 'Hóa học vô cơ, Hóa học hữu cơ và các phản ứng thực nghiệm', icon: FlaskConical, color: 'text-emerald-600', bg: 'bg-emerald-100' },
     { id: 'Sinh học', name: 'Sinh học', desc: 'Di truyền học, Tiến hóa, Sinh thái học và Cơ thể sinh vật', icon: Dna, color: 'text-green-600', bg: 'bg-green-100' },
+    { id: 'Tin học', name: 'Tin học', desc: 'Lập trình, Cơ sở dữ liệu và Ứng dụng công nghệ thông tin', icon: Monitor, color: 'text-teal-600', bg: 'bg-teal-100' },
+    { id: 'Công nghệ', name: 'Công nghệ', desc: 'Công nghiệp, Nông nghiệp và Định hướng nghề nghiệp', icon: Cpu, color: 'text-slate-600', bg: 'bg-slate-100' },
   ],
   social: [
     { id: 'Ngữ Văn', name: 'Ngữ Văn', desc: 'Văn học Việt Nam, Văn học nước ngoài, Làm văn và Tiếng Việt', icon: BookOpen, color: 'text-orange-600', bg: 'bg-orange-100' },
     { id: 'Tiếng Anh', name: 'Tiếng Anh', desc: 'Ngữ pháp, Từ vựng, Kỹ năng nghe nói đọc viết chuẩn đầu ra', icon: Languages, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { id: 'Tiếng Pháp', name: 'Tiếng Pháp', desc: 'Ngôn ngữ và văn hóa Pháp', icon: Languages, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { id: 'Tiếng Trung', name: 'Tiếng Trung', desc: 'Ngôn ngữ và văn hóa Trung Quốc', icon: Languages, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { id: 'Tiếng Nhật', name: 'Tiếng Nhật', desc: 'Ngôn ngữ và văn hóa Nhật Bản', icon: Languages, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { id: 'Tiếng Nga', name: 'Tiếng Nga', desc: 'Ngôn ngữ và văn hóa Nga', icon: Languages, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { id: 'Tiếng Hàn', name: 'Tiếng Hàn', desc: 'Ngôn ngữ và văn hóa Hàn Quốc', icon: Languages, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { id: 'Tiếng Đức', name: 'Tiếng Đức', desc: 'Ngôn ngữ và văn hóa Đức', icon: Languages, color: 'text-indigo-600', bg: 'bg-indigo-100' },
     { id: 'Kinh tế & Pháp luật', name: 'Kinh tế & Pháp luật', desc: 'Kiến thức kinh tế cơ bản, pháp luật và quyền công dân Việt Nam', icon: Scale, color: 'text-red-600', bg: 'bg-red-100' },
     { id: 'Địa lý', name: 'Địa lý', desc: 'Địa lý tự nhiên, Địa lý dân cư và Địa lý kinh tế Việt Nam', icon: Globe, color: 'text-sky-600', bg: 'bg-sky-100' },
     { id: 'Lịch sử', name: 'Lịch sử', desc: 'Lịch sử Việt Nam qua các thời kỳ và Lịch sử thế giới cận hiện đại', icon: Hourglass, color: 'text-amber-600', bg: 'bg-amber-100' },
+    { id: 'GDTC', name: 'Giáo dục Thể chất', desc: 'Rèn luyện thể lực, kỹ năng vận động và thể thao', icon: Dumbbell, color: 'text-rose-600', bg: 'bg-rose-100' },
+    { id: 'GDQP', name: 'GD Quốc phòng & An ninh', desc: 'Kiến thức quốc phòng, an ninh và kỹ năng quân sự', icon: Shield, color: 'text-zinc-600', bg: 'bg-zinc-100' },
+    { id: 'Âm nhạc', name: 'Âm nhạc', desc: 'Lý thuyết âm nhạc, Thanh nhạc và Nhạc cụ', icon: Music, color: 'text-pink-600', bg: 'bg-pink-100' },
+    { id: 'Mĩ thuật', name: 'Mĩ thuật', desc: 'Hội họa, Điêu khắc và Lịch sử mĩ thuật', icon: Palette, color: 'text-fuchsia-600', bg: 'bg-fuchsia-100' },
   ]
 };
 
@@ -75,7 +87,7 @@ export default function Step2Page() {
             </div>
             {state.subjectGroup === 'natural' && <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
           </div>
-          <span className="text-slate-600 text-xs text-left">Toán học, Vật lý, Hóa học, Sinh học</span>
+          <span className="text-slate-600 text-xs text-left">Toán, Lý, Hóa, Sinh, Tin, Công nghệ</span>
         </button>
 
         <button
@@ -97,7 +109,7 @@ export default function Step2Page() {
             </div>
             {state.subjectGroup === 'social' && <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
           </div>
-          <span className="text-slate-600 text-xs text-left">Ngữ Văn, Tiếng Anh, Kinh tế & PL, Địa lý, Lịch sử</span>
+          <span className="text-slate-600 text-xs text-left">Văn, Sử, Địa, Ngoại ngữ, KT&PL, GDTC, QPAN, Nghệ thuật</span>
         </button>
       </div>
 
