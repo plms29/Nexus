@@ -167,16 +167,16 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
           className="relative w-full max-w-5xl bg-slate-100 rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] z-10"
         >
           {/* Header Bar */}
-          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-6 relative flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm shadow-md">
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-4 sm:p-6 relative flex flex-col sm:flex-row items-start sm:items-center justify-between shrink-0 gap-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm shadow-md shrink-0">
                 <Sparkles className="w-5 h-5 text-blue-300" />
               </div>
               <div>
-                <h2 className="text-xl font-black text-white tracking-tight">
+                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight leading-tight">
                   Chi Tiết Workmap & Lịch Phân Bổ Tải Học Tập
                 </h2>
-                <p className="text-xs text-blue-200 font-semibold mt-0.5">
+                <p className="text-[11px] sm:text-xs text-blue-200 font-semibold mt-1">
                   Xem toàn bộ môn học, bài tập được giao và theo dõi chỉ số tải LU theo từng ngày.
                 </p>
               </div>
@@ -185,23 +185,23 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
             <button
               type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              className="absolute top-4 right-4 sm:static sm:top-auto sm:right-auto w-9 h-9 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Filter Bar Controls */}
-          <div className="bg-white px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 shrink-0">
-            <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-700">
+          <div className="bg-white px-4 sm:px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-xs font-bold text-slate-700 w-full md:w-auto">
               {/* Class Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-indigo-600" />
-                <span>LỌC THEO LỚP:</span>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Filter className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span className="shrink-0">LỌC:</span>
                 <select
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
-                  className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full sm:w-auto flex-1"
                 >
                   <option value={studentProfile.classId || '12A5'}>Lớp {studentProfile.classId || '12A5'}</option>
                   <option value="all">Tất cả các lớp</option>
@@ -212,23 +212,23 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
               </div>
 
               {/* Time Range Filter */}
-              <div className="flex items-center gap-2">
-                <span>KHOẢNG THỜI GIAN:</span>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="shrink-0">THỜI GIAN:</span>
                 <select
                   value={timeRange}
                   onChange={(e) => setTimeRange(e.target.value as any)}
-                  className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full sm:w-auto flex-1"
                 >
-                  <option value="1-past">1 ngày quá khứ</option>
+                  <option value="1-past">1 ngày qua</option>
                   <option value="7-days">7 ngày tới</option>
                   <option value="14-days">14 ngày tới</option>
-                  <option value="all">Tất cả quá khứ & Tương lai</option>
+                  <option value="all">Tất cả</option>
                 </select>
               </div>
             </div>
 
             {/* Status Legend */}
-            <div className="flex items-center gap-4 text-[11px] font-extrabold text-slate-600">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] sm:text-[11px] font-extrabold text-slate-600">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
                 An toàn (&lt;3.5 LU)
@@ -358,15 +358,15 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
           </div>
 
           {/* Footer Bar */}
-          <div className="bg-white p-4 border-t border-slate-200 flex items-center justify-between shrink-0">
-            <span className="text-xs font-semibold text-slate-500">
+          <div className="bg-white p-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between shrink-0 gap-3 text-center sm:text-left">
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-500 max-w-[250px] sm:max-w-none leading-tight">
               ExamLoad Radar • Hệ thống tự động cân bằng tải cho Giáo viên & Học sinh
             </span>
 
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all cursor-pointer shadow-sm"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all cursor-pointer shadow-sm"
             >
               Đóng Workmap
             </button>
