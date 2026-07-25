@@ -59,9 +59,6 @@ export default function Step3Page() {
         }
       }
 
-      // Set local storage flag for mock bypass
-      localStorage.setItem('examload_onboarding_done', 'true');
-      
       console.log('Onboarding complete:', state);
       router.push('/teacher');
     } catch (err: any) {

@@ -6,12 +6,29 @@ import type { OverloadResult } from '../lib/engine/detector';
 import { decideIntervention } from '../lib/engine/intervention';
 import type { InterventionDecision } from '../lib/engine/intervention';
 import { format, addDays } from 'date-fns';
-import { fetchTasks, fetchWorkmap, saveScheduledTask } from '../lib/api';
+import { fetchTasks, fetchWorkmap, saveScheduledTask, updateTaskInDb, deleteTaskFromDb } from '../lib/api';
 
 interface User {
   username: string;
   role: 'teacher' | 'student' | 'admin';
   name: string;
+}
+
+export interface StudentProfile {
+  name: string;
+  classId: string;
+  school: string;
+  province: string;
+  avatar: string;
+  isOnboarded: boolean;
+}
+
+export interface QuizResult {
+  taskId: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  completedAt: string;
 }
 
 interface AppState {
@@ -23,8 +40,17 @@ interface AppState {
   interventionProposal: InterventionDecision | null;
   user: User | null;
   activeTab: 'workmap' | 'assignments' | 'audit_logs';
-  
+  classes: any[];
+  subjects: any[];
+  studentProfile: StudentProfile;
+  quizResults: Record<string, QuizResult>;
+
+  loadStudentData: () => Promise<void>;
+  setStudentProfile: (profile: Partial<StudentProfile>) => void;
+  addQuizResult: (result: QuizResult) => void;
   addTask: (task: Task) => void;
+  updateTask: (taskId: string, updates: Partial<Task>) => Promise<boolean>;
+  deleteTask: (taskId: string) => Promise<boolean>;
   addWorkmapEntry: (entry: WorkmapEntry) => void;
   addAuditLog: (log: import('../lib/engine/types').AuditLog) => void;
   setSelectedDate: (date: string | null) => void;
@@ -36,16 +62,6 @@ interface AppState {
   autoScheduleTask: (task: Task, startDate: string, deadline: string, totalMinutes: number, steps?: {name: string, lu: number, min: number, dayOffset: number}[]) => Promise<void>;
 }
 
-// Load user from localStorage if exists
-const loadUser = (): User | null => {
-  try {
-    const saved = localStorage.getItem('examload_user');
-    return saved ? JSON.parse(saved) : null;
-  } catch (e) {
-    return null;
-  }
-};
-
 export const useStore = create<AppState>((set, get) => ({
   workmap: [],
   tasks: [],
@@ -53,11 +69,62 @@ export const useStore = create<AppState>((set, get) => ({
   selectedDate: format(new Date(), 'yyyy-MM-dd'),
   overloadAlert: null,
   interventionProposal: null,
-  user: loadUser(),
+  user: null,
   activeTab: 'workmap',
+  classes: [],
+  subjects: [],
+  studentProfile: {
+    name: '',
+    classId: '',
+    school: '',
+    province: '',
+    avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=b6e3f4',
+    isOnboarded: false
+  },
+  quizResults: {},
+
+  setStudentProfile: (profile) => {
+    const newProfile = { ...get().studentProfile, ...profile };
+    set({ studentProfile: newProfile });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('nexus_student_profile', JSON.stringify(newProfile));
+      } catch (e) {}
+    }
+    if (profile.classId) {
+      get().loadStudentData();
+    }
+  },
+
+  addQuizResult: (result) => set(state => ({
+    quizResults: { ...state.quizResults, [result.taskId]: result }
+  })),
 
   addTask: (task: Task) => set((state: AppState) => ({ tasks: [...state.tasks, task] })),
   
+  updateTask: async (taskId: string, updates: Partial<Task>) => {
+    const res = await updateTaskInDb(taskId, updates);
+    if (res.success) {
+      set(state => ({
+        tasks: state.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
+      }));
+      return true;
+    }
+    return false;
+  },
+
+  deleteTask: async (taskId: string) => {
+    const res = await deleteTaskFromDb(taskId);
+    if (res.success) {
+      set(state => ({
+        tasks: state.tasks.filter(t => t.id !== taskId),
+        workmap: state.workmap.filter(w => w.task_id !== taskId)
+      }));
+      return true;
+    }
+    return false;
+  },
+
   addWorkmapEntry: (entry: WorkmapEntry) => set((state: AppState) => ({ workmap: [...state.workmap, entry] })),
   
   addAuditLog: (log) => set((state: AppState) => ({ auditLogs: [log, ...state.auditLogs] })),
@@ -65,12 +132,10 @@ export const useStore = create<AppState>((set, get) => ({
   setSelectedDate: (date: string | null) => set({ selectedDate: date }),
   
   login: (user) => {
-    localStorage.setItem('examload_user', JSON.stringify(user));
     set({ user, activeTab: 'workmap' });
   },
   
   logout: () => {
-    localStorage.removeItem('examload_user');
     set({ user: null, activeTab: 'workmap' });
   },
   
@@ -79,15 +144,70 @@ export const useStore = create<AppState>((set, get) => ({
   clearAlert: () => set({ overloadAlert: null, interventionProposal: null }),
   
   loadData: async (classId?: string) => {
+    const { supabase } = await import('../lib/supabase');
+    const { fetchTeacherProfile } = await import('../lib/api');
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    let loadedClasses = ['10A1', '10A2', '11B1', '12A5'];
+    let loadedSubjects = ['Ngữ văn', 'Toán', 'Vật lý', 'Hóa học', 'Tin học', 'Tiếng Anh'];
+
+    if (user) {
+      try {
+        const profile = await fetchTeacherProfile(user.id);
+        if (profile) {
+          if (profile.classes && profile.classes.length > 0) loadedClasses = profile.classes;
+          if (profile.subjects && profile.subjects.length > 0) loadedSubjects = profile.subjects;
+        }
+      } catch (e) {
+        console.warn('Teacher profile check skipped:', e);
+      }
+    }
+
+    set({ classes: loadedClasses, subjects: loadedSubjects });
+
     const tasks = await fetchTasks(classId);
     const workmap = await fetchWorkmap(classId);
     set({ tasks, workmap });
+  },
+
+  loadStudentData: async () => {
+    const { supabase } = await import('../lib/supabase');
+    const { fetchStudentProfile, fetchTasks, fetchWorkmap } = await import('../lib/api');
+    
+    let savedLocalProfile: StudentProfile | null = null;
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('nexus_student_profile');
+        if (raw) savedLocalProfile = JSON.parse(raw);
+      }
+    } catch (e) {}
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    let activeProfile: StudentProfile = savedLocalProfile || get().studentProfile;
+
+    if (user) {
+      const profile = await fetchStudentProfile(user.id);
+      if (profile && (profile.name || profile.classId)) {
+        activeProfile = { ...activeProfile, ...profile };
+      }
+    }
+
+    if (activeProfile && (activeProfile.name || activeProfile.classId)) {
+      set({ studentProfile: activeProfile });
+    }
+
+    const targetClass = activeProfile.classId || '10A1';
+
+    const tasks = await fetchTasks(targetClass);
+    const workmap = await fetchWorkmap(targetClass);
+
+    set({ tasks: tasks || [], workmap: workmap || [] });
   },
   
   autoScheduleTask: async (task: Task, startDate: string, deadline: string, totalMinutes: number, steps?: {name: string, lu: number, min: number, dayOffset: number}[]) => {
     const workmap = get().workmap;
     
-    // Generate dates between startDate and deadline
     const dates = [];
     let curr = new Date(startDate);
     const end = new Date(deadline);
@@ -96,7 +216,6 @@ export const useStore = create<AppState>((set, get) => ({
       curr = addDays(curr, 1);
     }
     
-    // For Atomic Task (no steps provided)
     if (!steps) {
       let scheduledDate = null;
       for (const d of dates) {
@@ -108,7 +227,6 @@ export const useStore = create<AppState>((set, get) => ({
       }
       
       if (scheduledDate) {
-        // Success! Schedule it.
         const entry = {
           date: scheduledDate,
           subject_group: 'natural' as const,
@@ -122,26 +240,20 @@ export const useStore = create<AppState>((set, get) => ({
           get().addWorkmapEntry(entry);
           set({ overloadAlert: null, interventionProposal: null });
         } else {
-          alert('Failed to save to Supabase');
+          alert('Supabase Error: ' + (res.error?.message || 'Unknown error'));
         }
       } else {
-        // Overload on all possible days!
         const overloadResult = checkDailyOverload(deadline, workmap, totalMinutes);
         const intervention = decideIntervention(task, true);
         const current_lu = overloadResult.totalLU - (totalMinutes / 30);
         set({ overloadAlert: { ...overloadResult, task, new_minutes: totalMinutes, current_lu, date: deadline }, interventionProposal: intervention });
       }
     } 
-    // For Decomposable Task (steps provided)
     else {
-      let isFeasible = true;
       const scheduledEntries: WorkmapEntry[] = [];
-      
-      // Greedily schedule steps
       let stepIdx = 0;
       for (const d of dates) {
         if (stepIdx >= steps.length) break;
-        
         let availableMinutes = 150 - checkDailyOverload(d, workmap, 0).totalLU * 30;
         
         while (stepIdx < steps.length && availableMinutes >= steps[stepIdx].min) {
@@ -160,17 +272,15 @@ export const useStore = create<AppState>((set, get) => ({
       }
       
       if (stepIdx === steps.length) {
-        // Scheduled all steps!
         const res = await saveScheduledTask(task, scheduledEntries);
         if (res.success) {
           get().addTask(task);
           scheduledEntries.forEach(entry => get().addWorkmapEntry(entry));
           set({ overloadAlert: null, interventionProposal: null });
         } else {
-          alert('Failed to save to Supabase');
+          alert('Supabase Error: ' + (res.error?.message || 'Unknown error'));
         }
       } else {
-        // Couldn't fit all steps
         const overloadResult = checkDailyOverload(deadline, workmap, totalMinutes);
         const intervention = decideIntervention(task, true);
         const current_lu = overloadResult.totalLU - (totalMinutes / 30);
@@ -179,4 +289,3 @@ export const useStore = create<AppState>((set, get) => ({
     }
   }
 }));
-

@@ -10,6 +10,9 @@ export interface Task {
   isGroup: boolean;
   topic?: string;
   learning_objectives?: string;
+  outline?: { id: string; text: string }[];
+  essay_steps?: { id: string; stepName: string; minutes: number; note: string }[];
+  is_outline_approved?: boolean;
 }
 
 export interface TaskStep {

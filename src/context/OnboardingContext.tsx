@@ -7,6 +7,7 @@ export type SubjectGroup = 'natural' | 'social';
 export interface OnboardingState {
   teacherName: string;
   schoolName: string;
+  province: string;
   subjectGroup: SubjectGroup;
   selectedSubjects: string[];
   selectedClasses: string[];
@@ -21,6 +22,7 @@ interface OnboardingContextType {
 const initialState: OnboardingState = {
   teacherName: '',
   schoolName: '',
+  province: '',
   subjectGroup: 'natural',
   selectedSubjects: [],
   selectedClasses: [],

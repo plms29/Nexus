@@ -1,205 +1,1012 @@
-import { useState } from 'react';
-import { Plus, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useStore } from '@/store/useStore';
+import { 
+  fetchQuestionPackages, 
+  createQuestionPackage, 
+  deleteQuestionPackage, 
+  fetchQuestionsForPackage, 
+  saveQuestionInDb, 
+  deleteQuestionFromDb, 
+  QuestionPackage, 
+  QuestionItem 
+} from '@/lib/api';
+import { 
+  Plus, 
+  FolderPlus, 
+  Folder, 
+  Download, 
+  Upload, 
+  Trash2, 
+  Edit3, 
+  CheckCircle2, 
+  Sparkles, 
+  X, 
+  ArrowLeft, 
+  FileSpreadsheet, 
+  HelpCircle,
+  BookOpen,
+  Layers
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 
-type Difficulty = 'easy' | 'medium' | 'hard' | 'very_hard';
-
-interface Question {
-  id: string;
-  difficulty: Difficulty;
-  timeSeconds: number;
-  text: string;
-  options: { label: string; text: string; isCorrect: boolean }[];
-  explanation: string;
-}
-
-const mockQuestions: Question[] = [
-  {
-    id: 'q1',
-    difficulty: 'easy',
-    timeSeconds: 20,
-    text: 'Cho phương trình bậc hai: x² - 5x + 6 = 0. Biệt thức Δ (Delta) của phương trình này có giá trị bằng bao nhiêu?',
-    options: [
-      { label: 'A', text: 'Δ = 1', isCorrect: true },
-      { label: 'B', text: 'Δ = 25', isCorrect: false },
-      { label: 'C', text: 'Δ = -1', isCorrect: false },
-      { label: 'D', text: 'Δ = 0', isCorrect: false },
-    ],
-    explanation: 'Biệt thức Δ = b² - 4ac = (-5)² - 4*1*6 = 25 - 24 = 1. Vì Δ > 0 nên phương trình có hai nghiệm phân biệt.'
-  },
-  {
-    id: 'q2',
-    difficulty: 'medium',
-    timeSeconds: 45,
-    text: 'Định lý Vi-ét phát biểu về mối liên hệ giữa các nghiệm x₁, x₂ của phương trình bậc hai ax² + bx + c = 0 (a ≠ 0). Tổng (S) và Tích (P) của các nghiệm này là gì?',
-    options: [
-      { label: 'A', text: 'S = -b/a, P = c/a', isCorrect: true },
-      { label: 'B', text: 'S = b/a, P = -c/a', isCorrect: false },
-      { label: 'C', text: 'S = -c/a, P = b/a', isCorrect: false },
-      { label: 'D', text: 'S = -b/2a, P = c/2a', isCorrect: false },
-    ],
-    explanation: 'Theo định lý Vi-ét, tổng hai nghiệm là S = -b/a và tích hai nghiệm là P = c/a.'
-  },
-  {
-    id: 'q3',
-    difficulty: 'hard',
-    timeSeconds: 120,
-    text: 'Tìm tất cả các giá trị của tham số m để phương trình x² - 2(m-1)x + m² - 3 = 0 có hai nghiệm phân biệt x₁, x₂ thỏa mãn x₁² + x₂² = 4.',
-    options: [
-      { label: 'A', text: 'm = 1', isCorrect: false },
-      { label: 'B', text: 'm = -1', isCorrect: false },
-      { label: 'C', text: 'm = 1 hoặc m = -1', isCorrect: true },
-      { label: 'D', text: 'Không có giá trị nào của m', isCorrect: false },
-    ],
-    explanation: 'Sử dụng hệ thức Vi-ét và điều kiện Δ > 0. Ta có Δ\' = (m-1)² - (m²-3) = -2m + 4 > 0 => m < 2. Và x₁² + x₂² = S² - 2P = 4 => (2(m-1))² - 2(m²-3) = 4 <=> 2m² - 8m + 6 = 0 <=> m = 1 (TM) hoặc m = 3 (Loại).' // Modified to single correct for simplicity
-  }
-];
-
 const difficultyMap = {
-  easy: { title: 'Nhận biết', color: 'text-emerald-700', bg: 'bg-emerald-100' },
-  medium: { title: 'Thông hiểu', color: 'text-blue-700', bg: 'bg-blue-100' },
-  hard: { title: 'Vận dụng', color: 'text-orange-700', bg: 'bg-orange-100' },
-  very_hard: { title: 'Vận dụng cao', color: 'text-red-700', bg: 'bg-red-100' },
+  l1: { title: 'Nhận biết', color: 'text-emerald-700 border-emerald-200', bg: 'bg-emerald-100' },
+  l2: { title: 'Thông hiểu', color: 'text-blue-700 border-blue-200', bg: 'bg-blue-100' },
+  l3: { title: 'Vận dụng', color: 'text-amber-800 border-amber-200', bg: 'bg-amber-100' },
+  l4: { title: 'Vận dụng cao', color: 'text-rose-700 border-rose-200', bg: 'bg-rose-100' },
 };
 
-type FilterTab = 'all' | Difficulty;
+// Robust CSV Parsing Helpers
+const parseCsvRow = (line: string): string[] => {
+  const delimiter = line.includes(';') && (line.split(';').length > line.split(',').length) ? ';' : ',';
+  
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result.map(val => val.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+};
+
+const mapLevelStringToCode = (val: string): 'l1' | 'l2' | 'l3' | 'l4' => {
+  const v = (val || '').toLowerCase().trim();
+  if (v === 'l1' || v === '1' || v.includes('nhận biết') || v.includes('nhan biet') || v.includes('dễ') || v.includes('de')) return 'l1';
+  if (v === 'l2' || v === '2' || v.includes('thông hiểu') || v.includes('thong hieu') || v.includes('trung bình')) return 'l2';
+  if (v.includes('vận dụng cao') || v.includes('van dung cao') || v.includes('rất khó') || v === 'l4' || v === '4') return 'l4';
+  if (v === 'l3' || v === '3' || v.includes('vận dụng') || v.includes('van dung') || v.includes('khó')) return 'l3';
+  return 'l1';
+};
 
 export default function QuestionBank() {
-  const [activeTab, setActiveTab] = useState<FilterTab>('all');
-  const [questions] = useState<Question[]>(mockQuestions);
+  const { classes, subjects } = useStore();
 
-  const filteredQuestions = activeTab === 'all' 
-    ? questions 
-    : questions.filter(q => q.difficulty === activeTab);
+  // State: Packages List
+  const [packages, setPackages] = useState<QuestionPackage[]>([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState<boolean>(true);
 
-  const counts = {
-    all: questions.length,
-    easy: questions.filter(q => q.difficulty === 'easy').length,
-    medium: questions.filter(q => q.difficulty === 'medium').length,
-    hard: questions.filter(q => q.difficulty === 'hard').length,
-    very_hard: questions.filter(q => q.difficulty === 'very_hard').length,
+  // Active Selected Package View
+  const [activePackage, setActivePackage] = useState<QuestionPackage | null>(null);
+  const [packageQuestions, setPackageQuestions] = useState<QuestionItem[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState<boolean>(false);
+  const [activeDiffFilter, setActiveDiffFilter] = useState<string>('all');
+
+  // Modal State: Create New Package
+  const [isCreatePkgOpen, setIsCreatePkgOpen] = useState<boolean>(false);
+  const [newPkgTitle, setNewPkgTitle] = useState('');
+  const [newPkgSubject, setNewPkgSubject] = useState(subjects?.[0] || 'Toán');
+  const [newPkgGrade, setNewPkgGrade] = useState(classes?.[0] || '10A');
+  const [newPkgDesc, setNewPkgDesc] = useState('');
+  const [isSavingPkg, setIsSavingPkg] = useState(false);
+
+  // Modal State: Delete Package Confirmation
+  const [deletingPkgId, setDeletingPkgId] = useState<string | null>(null);
+  const [isDeletingPkg, setIsDeletingPkg] = useState(false);
+
+  // Modal State: Add/Edit Question inside Package
+  const [editingQuestion, setEditingQuestion] = useState<QuestionItem | null>(null);
+  const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
+  const [qText, setQText] = useState('');
+  const [qOptA, setQOptA] = useState('');
+  const [qOptB, setQOptB] = useState('');
+  const [qOptC, setQOptC] = useState('');
+  const [qOptD, setQOptD] = useState('');
+  const [qCorrect, setQCorrect] = useState('A');
+  const [qLevel, setQLevel] = useState<'l1' | 'l2' | 'l3' | 'l4'>('l1');
+  const [qExplanation, setQExplanation] = useState('');
+  const [isSavingQuestion, setIsSavingQuestion] = useState(false);
+
+  // State: CSV Upload
+  const [isUploadingCsv, setIsUploadingCsv] = useState(false);
+
+  // Initial Load: Fetch packages from Supabase
+  useEffect(() => {
+    loadPackages();
+  }, []);
+
+  const loadPackages = async () => {
+    setIsLoadingPackages(true);
+    const data = await fetchQuestionPackages();
+    setPackages(data);
+    setIsLoadingPackages(false);
   };
 
-  const tabs = [
-    { id: 'all', label: `Tất cả (${counts.all})` },
-    { id: 'easy', label: `Nhận biết (${counts.easy})` },
-    { id: 'medium', label: `Thông hiểu (${counts.medium})` },
-    { id: 'hard', label: `Vận dụng (${counts.hard})` },
-    { id: 'very_hard', label: `Vận dụng cao (${counts.very_hard})` },
-  ];
+  // Open a package and fetch its questions from Supabase
+  const handleOpenPackage = async (pkg: QuestionPackage) => {
+    setActivePackage(pkg);
+    setIsLoadingQuestions(true);
+    const qData = await fetchQuestionsForPackage(pkg.id);
+    setPackageQuestions(qData);
+    setIsLoadingQuestions(false);
+  };
+
+  // Submit Create New Package
+  const handleCreatePackageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPkgTitle.trim()) return;
+
+    setIsSavingPkg(true);
+    const res = await createQuestionPackage({
+      title: newPkgTitle.trim(),
+      subject: newPkgSubject,
+      grade_class: newPkgGrade,
+      description: newPkgDesc.trim()
+    });
+    setIsSavingPkg(false);
+
+    if (res.success && res.data) {
+      setPackages(prev => [res.data!, ...prev]);
+      setIsCreatePkgOpen(false);
+      setNewPkgTitle('');
+      setNewPkgDesc('');
+      handleOpenPackage(res.data);
+    } else {
+      alert('Lỗi tạo gói câu hỏi trên Supabase!');
+    }
+  };
+
+  // Confirm Delete Package
+  const handleConfirmDeletePackage = async () => {
+    if (!deletingPkgId) return;
+    setIsDeletingPkg(true);
+    const res = await deleteQuestionPackage(deletingPkgId);
+    setIsDeletingPkg(false);
+
+    if (res.success) {
+      setPackages(prev => prev.filter(p => p.id !== deletingPkgId));
+      if (activePackage?.id === deletingPkgId) {
+        setActivePackage(null);
+      }
+      setDeletingPkgId(null);
+    } else {
+      alert('Lỗi xóa gói câu hỏi!');
+    }
+  };
+
+  // Open Form to Add/Edit Question inside active package
+  const handleStartQuestionForm = (q?: QuestionItem) => {
+    if (q) {
+      setEditingQuestion(q);
+      setQText(q.question_text);
+      setQOptA(q.options[0] || '');
+      setQOptB(q.options[1] || '');
+      setQOptC(q.options[2] || '');
+      setQOptD(q.options[3] || '');
+      setQCorrect(q.correct_answer || 'A');
+      setQLevel(q.level || 'l1');
+      setQExplanation(q.explanation || '');
+      setIsAddQuestionOpen(true);
+    } else {
+      setEditingQuestion(null);
+      setQText('');
+      setQOptA('');
+      setQOptB('');
+      setQOptC('');
+      setQOptD('');
+      setQCorrect('A');
+      setQLevel('l1');
+      setQExplanation('');
+      setIsAddQuestionOpen(true);
+    }
+  };
+
+  // Save Question (Insert/Update to Supabase)
+  const handleSaveQuestionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activePackage || !qText.trim()) return;
+
+    setIsSavingQuestion(true);
+    const questionPayload: QuestionItem = {
+      id: editingQuestion?.id,
+      package_id: activePackage.id,
+      question_text: qText.trim(),
+      options: [qOptA.trim(), qOptB.trim(), qOptC.trim(), qOptD.trim()],
+      correct_answer: qCorrect,
+      level: qLevel,
+      explanation: qExplanation.trim()
+    };
+
+    const res = await saveQuestionInDb(questionPayload);
+    setIsSavingQuestion(false);
+
+    if (res.success && res.data) {
+      if (editingQuestion) {
+        setPackageQuestions(prev => prev.map(item => item.id === editingQuestion.id ? res.data : item));
+      } else {
+        setPackageQuestions(prev => [...prev, res.data]);
+        setPackages(prev => prev.map(p => p.id === activePackage.id ? { ...p, questions_count: (p.questions_count || 0) + 1 } : p));
+      }
+      setIsAddQuestionOpen(false);
+      setEditingQuestion(null);
+    } else {
+      alert('Lỗi lưu câu hỏi vào Supabase!');
+    }
+  };
+
+  // Delete Question
+  const handleDeleteQuestion = async (qId?: string) => {
+    if (!qId || !activePackage) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa câu hỏi này khỏi gói?')) return;
+
+    const res = await deleteQuestionFromDb(qId);
+    if (res.success) {
+      setPackageQuestions(prev => prev.filter(q => q.id !== qId));
+      setPackages(prev => prev.map(p => p.id === activePackage.id ? { ...p, questions_count: Math.max(0, (p.questions_count || 1) - 1) } : p));
+    } else {
+      alert('Lỗi xóa câu hỏi!');
+    }
+  };
+
+  // Download Sample CSV Template (Formatted with UTF-8 BOM)
+  const handleDownloadCsvTemplate = () => {
+    const csvContent = 
+      '\uFEFF' + // UTF-8 BOM
+      'Nội dung câu hỏi,Mức độ (l1/l2/l3/l4),Đáp án A,Đáp án B,Đáp án C,Đáp án D,Đáp án đúng (A/B/C/D),Lời giải chi tiết\n' +
+      '"Cho phương trình x^2 - 4 = 0. Nghiệm của phương trình là gì?",l1,"x = ±2","x = 2","x = 4","Vô nghiệm",A,"Phương trình tương đương x^2 = 4 => x = ±2."\n' +
+      '"Định lý Py-ta-go áp dụng cho tam giác nào?",l1,"Tam giác vuông","Tam giác đều","Tam giác cân","Tam giác tù",A,"Định lý Py-ta-go phát biểu trong tam giác vuông: a^2 + b^2 = c^2."\n' +
+      '"Giải bất phương trình: 2x - 4 > 0.",l2,"x > 2","x < 2","x > 4","x < 0",A,"2x > 4 <=> x > 2."\n';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'Mau_Ngan_Hang_Cau_Hoi.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Upload CSV File and import questions into current active package
+  const handleUploadCsvFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activePackage) return;
+
+    setIsUploadingCsv(true);
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+
+        if (lines.length <= 1) {
+          alert('File CSV trống hoặc không chứa dữ liệu câu hỏi!');
+          setIsUploadingCsv(false);
+          return;
+        }
+
+        const newQuestions: QuestionItem[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i];
+          const cleanValues = parseCsvRow(line);
+          if (cleanValues.length < 7) continue;
+
+          const [qText, qLevelStr, optA, optB, optC, optD, correctAns, explanation] = cleanValues;
+
+          if (qText && optA && optB) {
+            const validLevel = mapLevelStringToCode(qLevelStr);
+            const validCorrect = ['A', 'B', 'C', 'D'].includes((correctAns || 'A').toUpperCase()) ? correctAns.toUpperCase() : 'A';
+
+            newQuestions.push({
+              package_id: activePackage.id,
+              question_text: qText,
+              options: [optA, optB, optC || '', optD || ''],
+              correct_answer: validCorrect,
+              level: validLevel,
+              explanation: explanation || ''
+            });
+          }
+        }
+
+        if (newQuestions.length === 0) {
+          alert('Không tìm thấy câu hỏi hợp lệ nào trong file CSV!');
+          setIsUploadingCsv(false);
+          return;
+        }
+
+        let successCount = 0;
+        for (const q of newQuestions) {
+          const res = await saveQuestionInDb(q);
+          if (res.success) successCount++;
+        }
+
+        const updatedQuestions = await fetchQuestionsForPackage(activePackage.id);
+        setPackageQuestions(updatedQuestions);
+        setPackages(prev => prev.map(p => p.id === activePackage.id ? { ...p, questions_count: updatedQuestions.length } : p));
+
+        alert(`Đã tải lên thành công ${successCount} câu hỏi vào gói "${activePackage.title}"!`);
+      } catch (err) {
+        console.error('Lỗi đọc file CSV:', err);
+        alert('Lỗi khi đọc file CSV. Vui lòng kiểm tra lại định dạng file!');
+      } finally {
+        setIsUploadingCsv(false);
+        e.target.value = '';
+      }
+    };
+
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  // Upload CSV File and automatically create a new Package from file name + import all questions
+  const handleUploadCsvToNewPackage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingCsv(true);
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+
+        if (lines.length <= 1) {
+          alert('File CSV trống hoặc không chứa dữ liệu câu hỏi!');
+          setIsUploadingCsv(false);
+          return;
+        }
+
+        const fileNameNoExt = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+        const pkgTitle = `Gói: ${fileNameNoExt}`;
+
+        const pkgRes = await createQuestionPackage({
+          title: pkgTitle,
+          subject: subjects?.[0] || 'Toán',
+          grade_class: classes?.[0] || '10A',
+          description: `Gói câu hỏi tự động khởi tạo từ file CSV: ${file.name}`
+        });
+
+        if (!pkgRes.success || !pkgRes.data) {
+          alert('Lỗi tạo gói câu hỏi mới trên Supabase!');
+          setIsUploadingCsv(false);
+          return;
+        }
+
+        const newPkg = pkgRes.data;
+
+        const newQuestions: QuestionItem[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i];
+          const cleanValues = parseCsvRow(line);
+          if (cleanValues.length < 7) continue;
+
+          const [qText, qLevelStr, optA, optB, optC, optD, correctAns, explanation] = cleanValues;
+
+          if (qText && optA && optB) {
+            const validLevel = mapLevelStringToCode(qLevelStr);
+            const validCorrect = ['A', 'B', 'C', 'D'].includes((correctAns || 'A').toUpperCase()) ? correctAns.toUpperCase() : 'A';
+
+            newQuestions.push({
+              package_id: newPkg.id,
+              question_text: qText,
+              options: [optA, optB, optC || '', optD || ''],
+              correct_answer: validCorrect,
+              level: validLevel,
+              explanation: explanation || ''
+            });
+          }
+        }
+
+        if (newQuestions.length === 0) {
+          alert('Không tìm thấy câu hỏi hợp lệ nào trong file CSV!');
+          setIsUploadingCsv(false);
+          return;
+        }
+
+        let successCount = 0;
+        for (const q of newQuestions) {
+          const res = await saveQuestionInDb(q);
+          if (res.success) successCount++;
+        }
+
+        await loadPackages();
+        handleOpenPackage(newPkg);
+
+        alert(`Đã tự động khởi tạo gói "${newPkg.title}" và tải lên ${successCount} câu hỏi thành công!`);
+      } catch (err) {
+        console.error('Lỗi đọc file CSV:', err);
+        alert('Lỗi khi đọc file CSV. Vui lòng kiểm tra lại định dạng file!');
+      } finally {
+        setIsUploadingCsv(false);
+        e.target.value = '';
+      }
+    };
+
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  // Filtered questions inside active package
+  const filteredPackageQuestions = activeDiffFilter === 'all'
+    ? packageQuestions
+    : packageQuestions.filter(q => q.level === activeDiffFilter);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden relative p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <span className="text-emerald-600 text-2xl leading-none">+</span> Ngân Hàng Câu Hỏi Đề Thi
-          </h2>
-          <p className="text-slate-500 text-sm mt-1">
-            Tổng số câu hỏi hiện có: <strong className="text-slate-900">{counts.all} câu</strong>. Xem, sửa đổi hoặc thêm câu hỏi mới.
-          </p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-md shadow-indigo-500/30 transition-colors">
-          <Plus className="w-4 h-4" />
-          Thêm Câu Hỏi Thủ Công
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex bg-slate-50 p-1 rounded-xl mb-6 border border-slate-200 overflow-x-auto">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as FilterTab)}
-            className={clsx(
-              "px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border border-transparent",
-              activeTab === tab.id 
-                ? "bg-white text-slate-900 shadow-sm border-slate-200" 
-                : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Questions List */}
-      <div className="space-y-6">
-        {filteredQuestions.map((q, index) => {
-          const diffMeta = difficultyMap[q.difficulty];
-          return (
-            <div key={q.id} className="bg-white border border-slate-200 shadow-sm rounded-xl p-5 hover:border-slate-300 transition-colors">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-slate-400 font-bold text-sm">#{index + 1}</span>
-                  <span className={clsx("text-xs font-bold px-2.5 py-1 rounded-lg", diffMeta.bg, diffMeta.color)}>
-                    {diffMeta.title}
-                  </span>
-                  <span className="text-xs text-slate-500">Thời gian: {q.timeSeconds} giây</span>
+    <div className="w-full space-y-6">
+      {/* 1. Main View: Package List View */}
+      {!activePackage ? (
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xl shadow-slate-200/50 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+                  <Folder className="w-5 h-5" />
                 </div>
-                <div className="flex items-center gap-2 text-slate-400">
-                  <button className="p-1.5 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button className="p-1.5 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  Ngân Hàng Gói Câu Hỏi Đề Thi
+                </h2>
               </div>
+              <p className="text-xs font-semibold text-slate-500">
+                Kho dữ liệu gói câu hỏi riêng của giáo viên, nhập dữ liệu từ file CSV mẫu và lưu trữ trực tiếp trên hệ thống Supabase.
+              </p>
+            </div>
 
-              <div className="text-slate-900 text-[15px] leading-relaxed font-medium mb-5">
-                {q.text}
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={handleDownloadCsvTemplate}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors flex items-center gap-2 border border-slate-200/80 cursor-pointer shadow-sm"
+              >
+                <Download className="w-4 h-4 text-emerald-600" /> Tải Template CSV Mẫu
+              </button>
+
+              <label className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-500/20">
+                <Upload className="w-4 h-4" />
+                {isUploadingCsv ? 'Đang tạo gói...' : 'Upload CSV ➔ Tự Tạo Gói Mới'}
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  onChange={handleUploadCsvToNewPackage} 
+                  disabled={isUploadingCsv}
+                  className="hidden" 
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setIsCreatePkgOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <FolderPlus className="w-4 h-4" /> Tạo Gói Câu Hỏi Mới
+              </button>
+            </div>
+          </div>
+
+          {/* Packages List Grid */}
+          {isLoadingPackages ? (
+            <div className="text-center py-16 text-xs font-extrabold text-slate-400">
+              Đang tải danh sách gói câu hỏi từ Supabase...
+            </div>
+          ) : packages.length === 0 ? (
+            <div className="text-center py-16 bg-slate-50/60 rounded-3xl border border-dashed border-slate-200 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100">
+                <FolderPlus className="w-6 h-6" />
               </div>
+              <h3 className="font-extrabold text-slate-800 text-base">Chưa có gói câu hỏi nào</h3>
+              <p className="text-xs text-slate-500 font-semibold max-w-sm mx-auto">
+                Hãy bấm nút "Tạo Gói Câu Hỏi Mới" hoặc "Upload CSV &rarr; Tự Tạo Gói Mới" ở trên.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {packages.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  onClick={() => handleOpenPackage(pkg)}
+                  className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4 group cursor-pointer relative"
+                >
+                  <div>
+                    {/* Top Badges */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="px-2.5 py-1 rounded-xl text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80">
+                        Môn {pkg.subject}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-xl text-xs font-extrabold bg-slate-100 text-slate-600 border border-slate-200/80">
+                        Kho riêng giáo viên
+                      </span>
+                    </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-5">
-                {q.options.map((opt, optIdx) => (
-                  <div 
-                    key={optIdx} 
-                    className={clsx(
-                      "flex items-center gap-3 p-3 rounded-xl border",
-                      opt.isCorrect 
-                        ? "bg-emerald-50 border-emerald-200" 
-                        : "bg-slate-50 border-slate-200"
-                    )}
-                  >
-                    <div className={clsx(
-                      "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
-                      opt.isCorrect 
-                        ? "bg-emerald-500 text-white" 
-                        : "bg-slate-200 text-slate-700"
-                    )}>
-                      {opt.label}
-                    </div>
-                    <div className={clsx(
-                      "text-sm flex-1",
-                      opt.isCorrect ? "text-emerald-700 font-medium" : "text-slate-700"
-                    )}>
-                      {opt.text}
-                    </div>
-                    {opt.isCorrect && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    {/* Title */}
+                    <h3 className="text-lg font-black text-slate-900 leading-snug tracking-tight mb-2 group-hover:text-blue-600 transition-colors">
+                      {pkg.title}
+                    </h3>
+
+                    {/* Description */}
+                    {pkg.description && (
+                      <p className="text-xs text-slate-500 font-medium line-clamp-2 mb-3">
+                        {pkg.description}
+                      </p>
                     )}
                   </div>
-                ))}
-              </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Giải thích đáp án đúng:
+                  {/* Footer Meta */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div className="text-xs font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 flex items-center gap-1.5">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                      <span>{pkg.questions_count || 0} câu hỏi</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingPkgId(pkg.id);
+                      }}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="Xóa gói câu hỏi này"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="text-sm text-slate-600 leading-relaxed">
-                  {q.explanation}
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* 2. Active Package Detail View & Questions Editor */
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xl shadow-slate-200/50 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => { setActivePackage(null); loadPackages(); }}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                title="Quay lại danh sách gói"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                    {activePackage.title}
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
+                    Môn {activePackage.subject}
+                  </span>
                 </div>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                  Tổng số câu trong gói: <strong className="text-slate-900">{packageQuestions.length} câu</strong>. Đã đồng bộ Supabase DB.
+                </p>
               </div>
             </div>
-          );
-        })}
-        {filteredQuestions.length === 0 && (
-          <div className="text-center py-12 text-slate-500">
-            Không có câu hỏi nào thuộc mức độ này.
+
+            {/* Package Action Buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleDownloadCsvTemplate}
+                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors flex items-center gap-1.5 border border-slate-200 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-600" /> Tải Template CSV
+              </button>
+
+              <label className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20">
+                <Upload className="w-3.5 h-3.5" />
+                {isUploadingCsv ? 'Đang đọc CSV...' : 'Upload File CSV'}
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  onChange={handleUploadCsvFile} 
+                  disabled={isUploadingCsv}
+                  className="hidden" 
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => handleStartQuestionForm()}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Thêm Câu Hỏi Thủ Công
+              </button>
+            </div>
+          </div>
+
+          {/* Difficulty Filter Tabs */}
+          <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-200 overflow-x-auto">
+            {[
+              { id: 'all', label: `Tất cả (${packageQuestions.length})` },
+              { id: 'l1', label: `Nhận biết (${packageQuestions.filter(q => q.level === 'l1').length})` },
+              { id: 'l2', label: `Thông hiểu (${packageQuestions.filter(q => q.level === 'l2').length})` },
+              { id: 'l3', label: `Vận dụng (${packageQuestions.filter(q => q.level === 'l3').length})` },
+              { id: 'l4', label: `Vận dụng cao (${packageQuestions.filter(q => q.level === 'l4').length})` },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveDiffFilter(tab.id)}
+                className={clsx(
+                  "px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-colors border",
+                  activeDiffFilter === tab.id
+                    ? "bg-white text-blue-700 shadow-sm border-slate-200"
+                    : "text-slate-500 border-transparent hover:text-slate-900"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Questions List Render */}
+          {isLoadingQuestions ? (
+            <div className="text-center py-12 text-xs font-extrabold text-slate-400">
+              Đang tải danh sách câu hỏi trong gói...
+            </div>
+          ) : filteredPackageQuestions.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50/60 rounded-3xl border border-dashed border-slate-200 text-slate-500 text-xs font-bold space-y-2">
+              <p>Gói câu hỏi này chưa có dữ liệu ở mức độ đã chọn.</p>
+              <p className="text-[11px] text-slate-400">Bạn có thể bấm "Upload File CSV" hoặc "Thêm Câu Hỏi Thủ Công" để bổ sung.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredPackageQuestions.map((q, idx) => {
+                const diffMeta = difficultyMap[q.level || 'l1'];
+
+                return (
+                  <div
+                    key={q.id || idx}
+                    className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          #{idx + 1}
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className={clsx("text-xs font-extrabold px-2.5 py-0.5 rounded-lg border", diffMeta.bg, diffMeta.color)}>
+                              {diffMeta.title}
+                            </span>
+                          </div>
+                          <div className="font-extrabold text-slate-900 text-base leading-relaxed">
+                            {q.question_text}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleStartQuestionForm(q)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          title="Sửa câu hỏi"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteQuestion(q.id)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Xóa câu hỏi"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Options Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-semibold pl-9">
+                      {q.options.map((opt, optIdx) => {
+                        const optLetter = String.fromCharCode(65 + optIdx);
+                        const isCorrect = q.correct_answer === optLetter;
+
+                        return (
+                          <div
+                            key={optIdx}
+                            className={clsx(
+                              "p-3 rounded-xl border flex items-center justify-between gap-2",
+                              isCorrect 
+                                ? "bg-emerald-50 text-emerald-900 border-emerald-300 font-extrabold" 
+                                : "bg-slate-50 text-slate-700 border-slate-200"
+                            )}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className={clsx(
+                                "w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0",
+                                isCorrect ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700"
+                              )}>
+                                {optLetter}
+                              </span>
+                              <span className="truncate">{opt}</span>
+                            </div>
+                            {isCorrect && (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Explanation */}
+                    {q.explanation && (
+                      <div className="text-xs text-slate-600 font-medium bg-slate-50 p-3 rounded-xl border border-slate-100 ml-9">
+                        <strong className="text-slate-800 font-extrabold uppercase text-[10px] block mb-1">Giải thích đáp án đúng:</strong>
+                        {q.explanation}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal: Create Question Package */}
+      <AnimatePresence>
+        {isCreatePkgOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCreatePkgOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative z-10 w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 border border-slate-200 space-y-6"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <FolderPlus className="w-5 h-5 text-blue-600" /> Tạo Gói Câu Hỏi Mới
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsCreatePkgOpen(false)}
+                  className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreatePackageSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Tên Gói Câu Hỏi</label>
+                  <input
+                    type="text"
+                    value={newPkgTitle}
+                    onChange={e => setNewPkgTitle(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="VD: Bộ 100 câu Trắc nghiệm Toán 10 - Chương 1"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Bộ môn</label>
+                  <select
+                    value={newPkgSubject}
+                    onChange={e => setNewPkgSubject(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  >
+                    {subjects?.map((s: string) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Mô tả ngắn (Không bắt buộc)</label>
+                  <textarea
+                    value={newPkgDesc}
+                    onChange={e => setNewPkgDesc(e.target.value)}
+                    rows={3}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Nhập mô tả về nội dung gói câu hỏi..."
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatePkgOpen(false)}
+                    className="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingPkg}
+                    className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md flex items-center gap-2"
+                  >
+                    <FolderPlus className="w-4 h-4" /> {isSavingPkg ? 'Đang lưu...' : 'Tạo Gói Câu Hỏi'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
         )}
-      </div>
+      </AnimatePresence>
+
+      {/* Modal: Delete Package Confirmation */}
+      <AnimatePresence>
+        {deletingPkgId && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeletingPkgId(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 border border-slate-200 space-y-5 text-center"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Xóa Gói Câu Hỏi Này?</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-1">
+                  Toàn bộ câu hỏi nằm trong gói này sẽ bị xóa khỏi Supabase.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingPkgId(null)}
+                  className="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeletePackage}
+                  disabled={isDeletingPkg}
+                  className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-md flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" /> {isDeletingPkg ? 'Đang xóa...' : 'Xóa Gói'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Add/Edit Single Question inside Package */}
+      <AnimatePresence>
+        {isAddQuestionOpen && activePackage && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddQuestionOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative z-10 w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 border border-slate-200 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-blue-600" />
+                  {editingQuestion ? 'Sửa Câu Hỏi Trong Gói' : 'Thêm Câu Hỏi Mới Vào Gói'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsAddQuestionOpen(false)}
+                  className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveQuestionSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Nội dung câu hỏi / Đề bài</label>
+                  <textarea
+                    value={qText}
+                    onChange={e => setQText(e.target.value)}
+                    required
+                    rows={3}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Nhập đề bài câu hỏi..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-600">Đáp án A</label>
+                    <input type="text" value={qOptA} onChange={e => setQOptA(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder="Lựa chọn A..." />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-600">Đáp án B</label>
+                    <input type="text" value={qOptB} onChange={e => setQOptB(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder="Lựa chọn B..." />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-600">Đáp án C</label>
+                    <input type="text" value={qOptC} onChange={e => setQOptC(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder="Lựa chọn C..." />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-600">Đáp án D</label>
+                    <input type="text" value={qOptD} onChange={e => setQOptD(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder="Lựa chọn D..." />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Đáp án ĐÚNG</label>
+                    <select value={qCorrect} onChange={e => setQCorrect(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold">
+                      <option value="A">Đáp án A</option>
+                      <option value="B">Đáp án B</option>
+                      <option value="C">Đáp án C</option>
+                      <option value="D">Đáp án D</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Mức độ nhận thức</label>
+                    <select value={qLevel} onChange={e => setQLevel(e.target.value as any)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold">
+                      <option value="l1">Nhận biết (Dễ)</option>
+                      <option value="l2">Thông hiểu (Trung bình)</option>
+                      <option value="l3">Vận dụng (Khó)</option>
+                      <option value="l4">Vận dụng cao (Rất khó)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700">Lời giải chi tiết</label>
+                  <textarea
+                    value={qExplanation}
+                    onChange={e => setQExplanation(e.target.value)}
+                    rows={2}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold"
+                    placeholder="Giải thích lý do chọn đáp án đúng..."
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddQuestionOpen(false)}
+                    className="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingQuestion}
+                    className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md flex items-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> {isSavingQuestion ? 'Đang lưu...' : 'Lưu Câu Hỏi'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

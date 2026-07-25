@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Settings2, Database, Save, Printer, Upload, BookOpen, ChevronDown, LogOut
 } from 'lucide-react';
@@ -10,7 +10,10 @@ import QuizSetup from '@/components/teacher/QuizSetup';
 import EssaySetup from '@/components/teacher/EssaySetup';
 import QuestionBank from '@/components/teacher/QuestionBank';
 import { AssignmentForm } from '@/components/teacher/AssignmentForm';
+import { AssignmentManager } from '@/components/teacher/AssignmentManager';
 import { InterventionModal } from '@/components/teacher/InterventionModal';
+import { useStore } from '@/store/useStore';
+import { fetchQuestionPackages } from '@/lib/api';
 
 type SidebarTab = 'setup' | 'question-bank' | 'saved-tests';
 type TaskType = 'quiz' | 'essay' | 'chart';
@@ -18,7 +21,14 @@ type TaskType = 'quiz' | 'essay' | 'chart';
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<SidebarTab>('setup');
   const [taskType, setTaskType] = useState<TaskType>('quiz');
+  const [pkgCount, setPkgCount] = useState<number | null>(null);
   const router = useRouter();
+  const { loadData } = useStore();
+
+  useEffect(() => {
+    loadData();
+    fetchQuestionPackages().then(pkgs => setPkgCount(pkgs.length)).catch(() => {});
+  }, [loadData, activeTab]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
@@ -66,9 +76,11 @@ export default function Dashboard() {
                 )}>
                 <Database className="w-5 h-5" />
                 2. Ngân hàng câu hỏi
-                <span className={clsx("ml-auto text-xs py-0.5 px-2 rounded-full font-bold", 
+                <span className={clsx("ml-auto text-xs py-0.5 px-2.5 rounded-full font-bold", 
                   activeTab === 'question-bank' ? "bg-blue-700 text-white" : "bg-blue-100 text-blue-600"
-                )}>3</span>
+                )}>
+                  {pkgCount !== null ? `${pkgCount} Gói` : 'Gói'}
+                </span>
               </button>
               
               <button 
@@ -77,7 +89,7 @@ export default function Dashboard() {
                   activeTab === 'saved-tests' ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 )}>
                 <Save className="w-5 h-5" />
-                3. Đề thi đã lưu
+                3. Quản lý bài tập & Đề thi
               </button>
             </nav>
           </div>
@@ -110,17 +122,13 @@ export default function Dashboard() {
           
           {activeTab === 'setup' && (
             <div className="mt-2">
-              <AssignmentForm />
+              <AssignmentForm onNavigateToQuestionBank={() => setActiveTab('question-bank')} />
             </div>
           )}
 
           {activeTab === 'question-bank' && <QuestionBank />}
           
-          {activeTab === 'saved-tests' && (
-            <div className="text-center py-20 bg-white border border-slate-200 shadow-sm rounded-2xl">
-              <p className="text-slate-500">Danh sách đề thi đã lưu sẽ hiển thị ở đây...</p>
-            </div>
-          )}
+          {activeTab === 'saved-tests' && <AssignmentManager />}
           
           <InterventionModal />
         </main>

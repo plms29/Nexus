@@ -22,11 +22,9 @@ export const calculateMinutes = (lu: number): number => {
 };
 
 export const isAtomicTask = (type: string): boolean => {
-  const atomicTypes = ['quiz', 'chart', 'mindmap_short', 'short_exercise'];
-  return atomicTypes.includes(type);
+  return type === 'quiz';
 };
 
 export const isDecomposableTask = (type: string): boolean => {
-  const decomposableTypes = ['essay', 'mindmap_long', 'presentation_individual', 'presentation_group', 'project'];
-  return decomposableTypes.includes(type);
+  return type !== 'quiz';
 };

@@ -119,9 +119,9 @@
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 @layer base {
@@ -134,10 +134,17 @@
   html {
     @apply font-sans;
   }
-  
-  /* Fix for text-transparent and bg-clip-text invisible text on selection */
-  ::selection {
-    -webkit-text-fill-color: #0f172a; /* text-slate-900 */
-    color: #0f172a;
-  }
+}
+
+/* High-contrast, vibrant text selection (bôi đen) styles */
+::selection {
+  background-color: #2563eb !important; /* Vibrant Royal Blue */
+  color: #ffffff !important;            /* Bright White Text */
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+::-moz-selection {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }

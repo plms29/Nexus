@@ -39,26 +39,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const isDemoEmail = email.includes('admin') || email.includes('teacher') || email.includes('student');
-      const isMockMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_url';
-
-      // Use mock login if Supabase is not configured, or if it's a demo email and password is empty or 'demo'
-      if (isMockMode || (isDemoEmail && (!password || password === 'demo' || password === '123456' || password === 'password'))) {
-        console.warn('Using mock login.');
-        // Simulate network delay for nice button loading animation
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        const isMockOnboardingDone = localStorage.getItem('examload_onboarding_done') === 'true';
-
-        if (email.includes('admin')) router.push('/admin');
-        else if (email.includes('teacher')) {
-          if (isMockOnboardingDone) router.push('/teacher');
-          else router.push('/teacher/onboarding/step-1');
-        }
-        else router.push('/student');
-        return;
-      }
-
+      // Always use real Supabase authentication
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -66,34 +47,58 @@ export default function LoginPage() {
 
       if (authError) throw authError;
 
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      if (userError) throw userError;
-
-      if (userData.role === 'admin') {
-        router.push('/admin');
-      } else if (userData.role === 'teacher') {
-        const { data: profile, error: profileError } = await supabase
-          .from('teacher_profiles')
-          .select('id')
-          .eq('id', data.user.id)
-          .maybeSingle();
-
-        const isMockOnboardingDone = localStorage.getItem('examload_onboarding_done') === 'true';
-
-        if (profile || (profileError?.code === 'PGRST205' && isMockOnboardingDone)) router.push('/teacher');
-        else router.push('/teacher/onboarding/step-1');
+      let userRole = 'student';
+      
+      const cleanEmail = email.trim().toLowerCase();
+      if (cleanEmail.includes('student')) {
+        userRole = 'student';
+      } else if (cleanEmail.includes('admin')) {
+        userRole = 'admin';
+      } else if (cleanEmail.includes('teacher')) {
+        userRole = 'teacher';
       } else {
-        router.push('/student');
+        try {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', data.user.id)
+            .maybeSingle();
+
+          if (userData?.role) {
+            userRole = userData.role;
+          } else if (data?.user?.user_metadata?.role) {
+            userRole = data.user.user_metadata.role;
+          }
+        } catch (dbErr) {
+          console.warn('Could not query users table, fallback to role:', userRole);
+        }
+      }
+
+      // Perform fast, reliable navigation based on targeted role
+      if (userRole === 'student') {
+        try {
+          await supabase.from('users').upsert({
+            id: data.user.id,
+            email: data.user.email,
+            role: 'student',
+            name: data.user.user_metadata?.name || 'Phạm Lê Minh Sơn',
+            class_id: data.user.user_metadata?.class_id || '12A5',
+            school: data.user.user_metadata?.school || 'THPT Chuyên Lê Quý Đôn',
+            province: data.user.user_metadata?.province || 'Đà Nẵng',
+            avatar: data.user.user_metadata?.avatar || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=b6e3f4'
+          }, { onConflict: 'id' });
+        } catch (dbSaveErr) {
+          console.warn('Auto-save student record on login error:', dbSaveErr);
+        }
+        window.location.href = '/student';
+      } else if (userRole === 'admin') {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/teacher';
       }
 
     } catch (err: any) {
       setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
-    } finally {
       setLoading(false);
     }
   };
@@ -271,16 +276,7 @@ export default function LoginPage() {
               </Button>
             </motion.div>
             
-            <motion.div variants={fadeInUp} className="p-5 bg-slate-50 rounded-2xl border border-slate-200/60 mt-8 relative overflow-hidden group hover:border-blue-200 transition-colors">
-              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-2xl"></div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                <strong className="text-slate-700 mb-1 block flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-500" />
-                  Tài khoản Demo (Prototype):
-                </strong>
-                Nhập Email chứa <span className="font-bold text-blue-600 bg-blue-50 px-1 rounded">&quot;admin&quot;</span>, <span className="font-bold text-emerald-600 bg-emerald-50 px-1 rounded">&quot;teacher&quot;</span>, hoặc <span className="font-bold text-orange-600 bg-orange-50 px-1 rounded">&quot;student&quot;</span> để test phân quyền. Bỏ trống mật khẩu cũng được.
-              </p>
-            </motion.div>
+
           </motion.form>
         </motion.div>
       </div>

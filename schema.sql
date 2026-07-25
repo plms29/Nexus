@@ -6,7 +6,10 @@ CREATE TABLE users (
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'student')),
-  class_id UUID,
+  class_id TEXT,
+  school TEXT DEFAULT 'THPT Chuyên Lê Quý Đôn',
+  province TEXT DEFAULT 'Đà Nẵng',
+  avatar TEXT DEFAULT 'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=b6e3f4',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
