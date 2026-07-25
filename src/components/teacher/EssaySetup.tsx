@@ -57,16 +57,15 @@ const AutoResizingTextarea = ({
 
   const adjustHeight = () => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      // Add extra 6px to scrollHeight to guarantee descenders (g, y, p, q) are never clipped at bottom
-      const exactHeight = textareaRef.current.scrollHeight + 6;
+      // Đặt height về 1px để ép trình duyệt tính toán lại scrollHeight chính xác theo width thực tế
+      textareaRef.current.style.height = '1px';
+      const exactHeight = textareaRef.current.scrollHeight + 2;
       textareaRef.current.style.height = `${Math.max(40, exactHeight)}px`;
     }
   };
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     adjustHeight();
-    // Re-adjust after DOM layout renders fonts/word wraps
     const timer = setTimeout(adjustHeight, 50);
     return () => clearTimeout(timer);
   }, [value]);
@@ -405,9 +404,9 @@ export default function EssaySetup({
             {processSteps.map((step, idx) => (
               <div 
                 key={step.id} 
-                className="flex flex-col sm:grid sm:grid-cols-[3rem_1fr_10rem_1fr_3rem] gap-2 sm:gap-3 items-center bg-slate-50/80 hover:bg-slate-100/60 border border-slate-200/90 rounded-2xl p-3 transition-colors"
+                className="flex flex-col sm:grid sm:grid-cols-[3rem_1fr_10rem_1fr_3rem] gap-2 sm:gap-3 items-start bg-slate-50/80 hover:bg-slate-100/60 border border-slate-200/90 rounded-2xl p-3 transition-colors"
               >
-                <div className="w-7 h-7 rounded-xl bg-white border border-slate-200 text-slate-700 font-extrabold text-xs flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 mt-0.5 sm:mt-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-extrabold text-xs flex items-center justify-center shrink-0">
                   {idx + 1}
                 </div>
                 
@@ -418,7 +417,7 @@ export default function EssaySetup({
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 focus:ring-blue-500 placeholder:text-slate-400"
                 />
                 
-                <div className="w-full sm:w-auto flex items-center justify-center gap-2">
+                <div className="w-full sm:w-auto flex items-center justify-center gap-2 mt-0 sm:mt-1">
                   <input 
                     type="number" 
                     min="5"
@@ -438,7 +437,7 @@ export default function EssaySetup({
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 italic focus:ring-blue-500 placeholder:text-slate-400"
                 />
                 
-                <div className="flex justify-end sm:justify-center w-full sm:w-auto">
+                <div className="flex justify-end sm:justify-center w-full sm:w-auto mt-0 sm:mt-1">
                   <button 
                     type="button"
                     onClick={() => removeProcessStep(step.id)}
