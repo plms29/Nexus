@@ -34,32 +34,32 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
       {/* Top Header */}
       <header className="border-b border-slate-200 bg-white px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-lg text-slate-900 tracking-tight">Hệ Thống Lập Kế Hoạch & Thiết Kế Đề Thi</h1>
-            <p className="text-xs text-slate-500 font-medium">Chuyên môn hóa cho Giáo viên • Quản lý cấu trúc thời gian và câu hỏi thông minh</p>
+            <h1 className="font-bold text-base sm:text-lg text-slate-900 tracking-tight leading-tight">Hệ Thống Lập Kế Hoạch & Thiết Kế Đề Thi</h1>
+            <p className="text-[10px] sm:text-xs text-slate-500 font-medium mt-0.5 leading-snug hidden sm:block">Chuyên môn hóa cho Giáo viên • Quản lý cấu trúc thời gian và câu hỏi thông minh</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <button 
             onClick={() => router.push('/login')}
-            className="flex items-center gap-2 text-sm text-slate-500 hover:text-rose-600 font-medium px-3 py-2 rounded-xl hover:bg-rose-50 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-slate-500 hover:text-rose-600 font-medium px-2 sm:px-3 py-2 rounded-xl hover:bg-rose-50 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            Đăng xuất
+            <span className="hidden sm:inline">Đăng xuất</span>
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 p-6 gap-6 max-w-7xl mx-auto w-full">
+      <div className="flex flex-col lg:flex-row flex-1 p-4 sm:p-6 gap-6 max-w-7xl mx-auto w-full">
         {/* Sidebar */}
-        <aside className="w-64 shrink-0 flex flex-col gap-8">
+        <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-6 sm:gap-8">
           <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-2">CÁC BƯỚC THỰC HIỆN</h3>
-            <nav className="space-y-1">
+            <h3 className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 sm:mb-4 px-2">CÁC BƯỚC THỰC HIỆN</h3>
+            <nav className="space-y-1.5 sm:space-y-1 flex flex-col sm:block">
               <button 
                 onClick={() => setActiveTab('setup')}
                 className={clsx("w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors text-left", 
