@@ -44,7 +44,7 @@ export async function fetchStudentProfile(userId: string) {
       .eq('id', userId)
       .maybeSingle();
 
-    if (data && (data.name || data.class_id)) {
+    if (data && data.name && data.class_id && data.school && data.province) {
       return {
         name: data.name || '',
         classId: data.class_id || '10A5',
@@ -61,25 +61,34 @@ export async function fetchStudentProfile(userId: string) {
 }
 
 export async function saveStudentProfile(userId: string, profile: { name: string; classId: string; school: string; province: string; avatar: string }) {
-  try {
-    const { error } = await supabase
-      .from('users')
-      .upsert({
-        id: userId,
-        name: profile.name,
-        class_id: profile.classId,
-        school: profile.school,
-        province: profile.province,
-        avatar: profile.avatar,
-        role: 'student'
-      });
+  const { data: { user } } = await supabase.auth.getUser();
+  const email = user?.email;
+  if (!email) throw new Error('Không tìm thấy email tài khoản.');
 
-    if (error) {
-      console.warn('Error saving student profile to users table:', error.message);
-    }
-  } catch (err) {
-    console.error('Failed to save student profile to DB:', err);
-  }
+  const { error } = await supabase
+    .from('users')
+    .upsert({
+      id: userId,
+      email,
+      name: profile.name,
+      class_id: profile.classId,
+      school: profile.school,
+      province: profile.province,
+      avatar: profile.avatar,
+      role: 'student',
+    }, { onConflict: 'id' });
+
+  if (error) throw new Error(error.message);
+
+  await supabase.auth.updateUser({
+    data: {
+      name: profile.name,
+      class_id: profile.classId,
+      school: profile.school,
+      province: profile.province,
+      avatar: profile.avatar,
+    },
+  });
 }
 
 export async function fetchTasks(classId?: string) {

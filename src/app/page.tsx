@@ -41,18 +41,18 @@ export default function Home() {
             </div>
             <span className="font-bold text-xl text-slate-900 tracking-tight">ExamLoad Radar</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link 
               href="/login" 
-              className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
+              className="text-sm font-bold text-slate-700 hover:text-blue-600 transition-colors px-3 py-2"
             >
               Đăng nhập
             </Link>
             <Link 
-              href="/login" 
-              className="text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 px-4 py-2 rounded-lg transition-all hover:shadow-lg hover:-translate-y-0.5"
+              href="/login?tab=signup" 
+              className="text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-5 py-2.5 rounded-xl shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:-translate-y-0.5"
             >
-              Bắt đầu
+              Đăng ký ngay
             </Link>
           </div>
         </div>
@@ -103,17 +103,17 @@ export default function Home() {
             
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <Link 
-                href="/login"
-                className="group flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/40"
+                href="/login?tab=signup"
+                className="group flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/40"
               >
-                Trải nghiệm ngay
+                Đăng ký tài khoản mới
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link 
-                href="#features"
-                className="flex items-center justify-center w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl border border-slate-200 shadow-sm transition-all hover:-translate-y-1"
+                href="/login"
+                className="flex items-center justify-center w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-xl border border-slate-300 shadow-sm transition-all hover:-translate-y-1"
               >
-                Tìm hiểu thêm
+                Đăng nhập hệ thống
               </Link>
             </motion.div>
           </motion.div>

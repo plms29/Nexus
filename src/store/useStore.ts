@@ -188,12 +188,19 @@ export const useStore = create<AppState>((set, get) => ({
 
     if (user) {
       const profile = await fetchStudentProfile(user.id);
-      if (profile && (profile.name || profile.classId)) {
+      if (profile && profile.isOnboarded) {
         activeProfile = { ...activeProfile, ...profile };
+      } else {
+        activeProfile = {
+          ...activeProfile,
+          name: user.user_metadata?.name || user.user_metadata?.full_name || activeProfile.name,
+          avatar: user.user_metadata?.avatar || activeProfile.avatar,
+          isOnboarded: false,
+        };
       }
     }
 
-    if (activeProfile && (activeProfile.name || activeProfile.classId)) {
+    if (activeProfile && (activeProfile.isOnboarded || activeProfile.name)) {
       set({ studentProfile: activeProfile });
     }
 

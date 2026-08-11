@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, School, GraduationCap, ArrowRight, MapPin, AlertCircle, Lock } from 'lucide-react';
+import { User, School, GraduationCap, ArrowRight, MapPin, AlertCircle, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useStore, StudentProfile } from '@/store/useStore';
 
@@ -39,18 +39,19 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
   const [province, setProvince] = useState(studentProfile.province || '');
   const [avatar, setAvatar] = useState(studentProfile.avatar || DEFAULT_AVATAR);
   const [classError, setClassError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(!studentProfile.isOnboarded);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (studentProfile) {
-      setName(studentProfile.name || '');
-      setClassId(studentProfile.classId || '');
-      setSchool(studentProfile.school || '');
-      setProvince(studentProfile.province || '');
-      if (studentProfile.avatar) setAvatar(studentProfile.avatar);
-      if (!studentProfile.isOnboarded) setIsEditing(true);
-    }
-  }, [studentProfile]);
+    if (!isOpen) return;
+    setName(studentProfile.name || '');
+    setClassId(studentProfile.classId || '');
+    setSchool(studentProfile.school || '');
+    setProvince(studentProfile.province || '');
+    setAvatar(studentProfile.avatar || DEFAULT_AVATAR);
+    setClassError(null);
+    setSaveError(null);
+  }, [isOpen, studentProfile]);
 
   const activeAvatarUrl = (avatar && avatar.startsWith('http')) ? avatar : DEFAULT_AVATAR;
 
@@ -67,47 +68,57 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaveError(null);
 
-    if (!isEditing) {
-      setIsEditing(true);
+    const trimmedClass = classId.trim().toUpperCase();
+    if (!trimmedClass) {
+      setClassError('Vui lòng nhập lớp học.');
       return;
     }
-
-    const trimmedClass = classId.trim().toUpperCase() || '10A5';
-
-    if (trimmedClass && !CLASS_FORMAT_REGEX.test(trimmedClass)) {
-      setClassError('Định dạng lớp chưa hợp lệ! Vui lòng điền đúng mẫu 10Ax, 10Bx, 10Cx, 10Dx hoặc 10/x (Ví dụ: 10A5, 11B2, 12/1)');
+    if (!CLASS_FORMAT_REGEX.test(trimmedClass)) {
+      setClassError('Định dạng lớp chưa hợp lệ! Ví dụ: 10A5, 11B2, 12/1');
       return;
     }
-
-    const finalName = name.trim() || 'Nguyễn Văn Học';
-    const finalSchool = school.trim() || 'THPT Chuyên Lê Quý Đôn';
-    const finalProvince = province.trim() || 'Đà Nẵng';
+    if (!name.trim()) {
+      setSaveError('Vui lòng nhập họ và tên.');
+      return;
+    }
+    if (!school.trim()) {
+      setSaveError('Vui lòng nhập trường học.');
+      return;
+    }
+    if (!province.trim()) {
+      setSaveError('Vui lòng nhập tỉnh / thành phố.');
+      return;
+    }
 
     const updatedProfile: StudentProfile = {
-      name: finalName,
+      name: name.trim(),
       classId: trimmedClass,
-      school: finalSchool,
-      province: finalProvince,
+      school: school.trim(),
+      province: province.trim(),
       avatar: activeAvatarUrl,
-      isOnboarded: true
+      isOnboarded: true,
     };
 
-    setStudentProfile(updatedProfile);
-
+    setSaving(true);
     try {
-      localStorage.setItem('nexus_student_profile', JSON.stringify(updatedProfile));
       const { supabase } = await import('@/lib/supabase');
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { saveStudentProfile } = await import('@/lib/api');
-        await saveStudentProfile(user.id, updatedProfile);
-      }
+      if (!user) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+
+      const { saveStudentProfile } = await import('@/lib/api');
+      await saveStudentProfile(user.id, updatedProfile);
+
+      setStudentProfile(updatedProfile);
+      onClose();
     } catch (err) {
-      console.error('Failed to save student profile to Supabase:', err);
+      const message = err instanceof Error ? err.message : 'Không thể lưu hồ sơ. Vui lòng thử lại.';
+      setSaveError(message);
+      console.error('Failed to save student profile:', err);
+    } finally {
+      setSaving(false);
     }
-    setIsEditing(false);
-    onClose();
   };
 
   return (
@@ -150,6 +161,12 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
 
           {/* Form Content */}
           <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-slate-50/50">
+            {saveError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {saveError}
+              </div>
+            )}
             {/* Avatar Selector with Vibrant 3D Avatars */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider block mb-2.5">
@@ -160,11 +177,9 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                   <button
                     key={av.id}
                     type="button"
-                    disabled={!isEditing}
                     onClick={() => setAvatar(av.url)}
                     className={clsx(
-                      "w-12 h-12 rounded-2xl p-1 transition-all border flex items-center justify-center bg-white shadow-2xs overflow-hidden",
-                      !isEditing ? "opacity-65 cursor-not-allowed" : "cursor-pointer",
+                      "w-12 h-12 rounded-2xl p-1 transition-all border flex items-center justify-center bg-white shadow-2xs overflow-hidden cursor-pointer",
                       avatar === av.url
                         ? "border-blue-600 ring-2 ring-blue-500 shadow-md scale-110"
                         : "border-slate-200 hover:border-slate-300 hover:scale-105"
@@ -184,16 +199,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               </label>
               <input
                 type="text"
-                disabled={!isEditing}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ví dụ: Nguyễn Văn Học"
-                className={clsx(
-                  "w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all",
-                  !isEditing
-                    ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed"
-                    : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                )}
+                className="w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
 
@@ -207,20 +216,17 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               </label>
               <input
                 type="text"
-                disabled={!isEditing}
                 value={classId}
                 onChange={(e) => handleClassChange(e.target.value)}
                 placeholder="Ví dụ: 10A5, 11B2, 12/1"
                 className={clsx(
-                  "w-full px-4 py-3 rounded-2xl border text-sm font-extrabold uppercase shadow-2xs transition-all",
-                  !isEditing
-                    ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed"
-                    : classError 
-                      ? "border-rose-400 focus:ring-2 focus:ring-rose-500 bg-rose-50/30" 
-                      : "bg-white border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  "w-full px-4 py-3 rounded-2xl border text-sm font-extrabold uppercase shadow-2xs transition-all bg-white border-slate-200 focus:outline-none",
+                  classError
+                    ? "border-rose-400 focus:ring-2 focus:ring-rose-500 bg-rose-50/30"
+                    : "focus:ring-2 focus:ring-indigo-500"
                 )}
               />
-              {classError && isEditing && (
+              {classError && (
                 <div className="text-[11px] font-extrabold text-rose-600 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{classError}</span>
@@ -237,16 +243,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                 </label>
                 <input
                   type="text"
-                  disabled={!isEditing}
                   value={school}
                   onChange={(e) => setSchool(e.target.value)}
                   placeholder="Ví dụ: THPT Chuyên Lê Quý Đôn"
-                  className={clsx(
-                    "w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all",
-                    !isEditing
-                      ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed"
-                      : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                  )}
+                  className="w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 focus:outline-none"
                 />
               </div>
 
@@ -257,59 +257,41 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                 </label>
                 <input
                   type="text"
-                  disabled={!isEditing}
                   value={province}
                   onChange={(e) => setProvince(e.target.value)}
                   placeholder="Ví dụ: Đà Nẵng"
-                  className={clsx(
-                    "w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all",
-                    !isEditing
-                      ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed"
-                      : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  )}
+                  className="w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Footer Action Buttons */}
             <div className="pt-3 flex items-center gap-3">
-              {!isEditing ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
-                  >
-                    <span>✏️ Chỉnh Sửa Thông Tin & Đổi Lớp</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-5 py-3.5 rounded-2xl font-black text-sm bg-slate-200 text-slate-700 hover:bg-slate-300 transition-all cursor-pointer"
-                  >
-                    Đóng
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
-                  >
-                    <span>Xác Nhận & Lưu Thay Đổi</span>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-70"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang lưu...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Lưu Hồ Sơ</span>
                     <ArrowRight className="w-4 h-4" />
-                  </button>
-                  {studentProfile.isOnboarded && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(false)}
-                      className="px-5 py-3.5 rounded-2xl font-black text-sm bg-slate-200 text-slate-700 hover:bg-slate-300 transition-all cursor-pointer"
-                    >
-                      Hủy
-                    </button>
-                  )}
-                </>
-              )}
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={onClose}
+                className="px-5 py-3.5 rounded-2xl font-black text-sm bg-slate-200 text-slate-700 hover:bg-slate-300 transition-all cursor-pointer disabled:opacity-70"
+              >
+                Đóng
+              </button>
             </div>
           </form>
         </motion.div>

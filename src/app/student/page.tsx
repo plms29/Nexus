@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   LogOut, 
   Calendar, 
@@ -87,6 +87,7 @@ export default function StudentWorkmap() {
   const [selectedEssayTask, setSelectedEssayTask] = useState<TaskBlock | null>(null);
   const [selectedQuizTask, setSelectedQuizTask] = useState<Task | null>(null);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+  const autoOpenedOnboarding = useRef(false);
   const [checkedOutlineIds, setCheckedOutlineIds] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -98,6 +99,13 @@ export default function StudentWorkmap() {
   useEffect(() => {
     loadStudentData();
   }, [loadStudentData]);
+
+  useEffect(() => {
+    if (!studentProfile.isOnboarded && !autoOpenedOnboarding.current) {
+      autoOpenedOnboarding.current = true;
+      setShowOnboarding(true);
+    }
+  }, [studentProfile.isOnboarded]);
 
   // Build day columns on Student Workmap timeline dynamically from database
   const dayColumns: DayColumn[] = useMemo(() => {
