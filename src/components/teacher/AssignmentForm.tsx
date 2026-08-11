@@ -33,6 +33,7 @@ import { format, addDays } from 'date-fns';
 import clsx from 'clsx';
 import { DatePicker } from '@/components/ui/date-picker';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DEFAULT_CLASS_ID, normalizeClassId } from '@/lib/class-utils';
 
 const DRAFT_STORAGE_KEY = 'nexus_assignment_form_draft_v1';
 
@@ -50,7 +51,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
   const [type, setType] = useState<TaskType>('quiz');
-  const [classId, setClassId] = useState(availableClasses[0] || '10A');
+  const [classId, setClassId] = useState(availableClasses[0] || DEFAULT_CLASS_ID);
   const [subjectId, setSubjectId] = useState(availableSubjects.includes('Ngữ văn') ? 'Ngữ văn' : availableSubjects[0] || 'Ngữ văn');
   const [isGroup, setIsGroup] = useState(false);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -146,7 +147,9 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
   }, [selectedDate]);
 
   useEffect(() => {
-    if (availableClasses.length > 0 && !classes?.includes(classId)) setClassId(availableClasses[0]);
+    if (availableClasses.length > 0 && !classes?.includes(classId)) {
+      setClassId(normalizeClassId(availableClasses[0]) || DEFAULT_CLASS_ID);
+    }
     if (availableSubjects.length > 0 && !subjects?.includes(subjectId)) setSubjectId(availableSubjects[0]);
   }, [classes, subjects]);
 
@@ -239,11 +242,12 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
   };
 
   const handleConfirmSchedule = async (overrideReason?: string) => {
+    const normalizedClassId = normalizeClassId(classId) || DEFAULT_CLASS_ID;
     const newTask: Task = {
       id: crypto.randomUUID(),
       title, 
       type, 
-      class_id: classId, 
+      class_id: normalizedClassId, 
       subject_id: subjectId, 
       deadline, 
       isGroup,

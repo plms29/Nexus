@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Task, WorkmapEntry } from './engine/types';
+import { DEFAULT_CLASS_ID, normalizeClassId } from './class-utils';
 
 export interface QuestionItem {
   id?: string;
@@ -47,11 +48,24 @@ export async function fetchStudentProfile(userId: string) {
     if (data && data.name && data.class_id && data.school && data.province) {
       return {
         name: data.name || '',
-        classId: data.class_id || '10A5',
+        classId: normalizeClassId(data.class_id) || DEFAULT_CLASS_ID,
         school: data.school || 'THPT Chuyên Lê Quý Đôn',
         province: data.province || 'Đà Nẵng',
         avatar: data.avatar || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=b6e3f4',
         isOnboarded: true
+      };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const metaClassId = normalizeClassId(user?.user_metadata?.class_id);
+    if (user?.id === userId && data?.name && metaClassId) {
+      return {
+        name: data.name,
+        classId: metaClassId,
+        school: data.school || user.user_metadata?.school || 'THPT Chuyên Lê Quý Đôn',
+        province: data.province || user.user_metadata?.province || 'Đà Nẵng',
+        avatar: data.avatar || user.user_metadata?.avatar || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=b6e3f4',
+        isOnboarded: true,
       };
     }
   } catch (err) {
@@ -65,36 +79,60 @@ export async function saveStudentProfile(userId: string, profile: { name: string
   const email = user?.email;
   if (!email) throw new Error('Không tìm thấy email tài khoản.');
 
+  const normalizedClassId = normalizeClassId(profile.classId);
+
   const { error } = await supabase
     .from('users')
     .upsert({
       id: userId,
       email,
       name: profile.name,
-      class_id: profile.classId,
+      class_id: normalizedClassId,
       school: profile.school,
       province: profile.province,
       avatar: profile.avatar,
       role: 'student',
     }, { onConflict: 'id' });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    const isSchemaIssue =
+      error.message.includes('schema cache') ||
+      error.message.includes('column') ||
+      error.message.includes('uuid');
 
-  await supabase.auth.updateUser({
+    if (isSchemaIssue) {
+      const fallbacks: Record<string, string>[] = [
+        { id: userId, email, name: profile.name, role: 'student', school: profile.school, province: profile.province },
+        { id: userId, email, name: profile.name, role: 'student' },
+      ];
+      let saved = false;
+      for (const payload of fallbacks) {
+        const { error: fallbackError } = await supabase.from('users').upsert(payload, { onConflict: 'id' });
+        if (!fallbackError) { saved = true; break; }
+      }
+      if (!saved) throw new Error(error.message);
+    } else {
+      throw new Error(error.message);
+    }
+  }
+
+  const { error: authError } = await supabase.auth.updateUser({
     data: {
       name: profile.name,
-      class_id: profile.classId,
+      class_id: normalizedClassId,
       school: profile.school,
       province: profile.province,
       avatar: profile.avatar,
     },
   });
+  if (authError) throw new Error(authError.message);
 }
 
 export async function fetchTasks(classId?: string) {
   let query = supabase.from('tasks').select('*');
-  if (classId) {
-    query = query.eq('class_id', classId);
+  const normalizedClassId = normalizeClassId(classId);
+  if (normalizedClassId) {
+    query = query.eq('class_id', normalizedClassId);
   }
   
   const { data, error } = await query;
@@ -107,7 +145,7 @@ export async function fetchTasks(classId?: string) {
     id: d.id,
     title: d.title,
     type: d.type,
-    class_id: d.class_id,
+    class_id: normalizeClassId(d.class_id),
     subject_id: d.subject_id,
     deadline: d.deadline,
     isGroup: d.is_group,
@@ -120,10 +158,11 @@ export async function fetchTasks(classId?: string) {
 }
 
 export async function fetchWorkmap(classId?: string) {
+  const normalizedClassId = normalizeClassId(classId);
   try {
     let query = supabase.from('workmap_entries').select('*, tasks!inner(class_id)');
-    if (classId) {
-      query = query.eq('tasks.class_id', classId);
+    if (normalizedClassId) {
+      query = query.eq('tasks.class_id', normalizedClassId);
     }
 
     const { data, error } = await query;
@@ -157,11 +196,12 @@ export async function fetchWorkmap(classId?: string) {
 }
 
 export async function saveScheduledTask(task: Task, entries: WorkmapEntry[]) {
+  const normalizedClassId = normalizeClassId(task.class_id) || DEFAULT_CLASS_ID;
   const insertPayload: any = {
     id: task.id,
     title: task.title,
     type: task.type,
-    class_id: task.class_id,
+    class_id: normalizedClassId,
     subject_id: task.subject_id,
     deadline: task.deadline,
     is_group: task.isGroup,
@@ -185,7 +225,7 @@ export async function saveScheduledTask(task: Task, entries: WorkmapEntry[]) {
         id: task.id,
         title: task.title,
         type: task.type,
-        class_id: task.class_id,
+        class_id: normalizedClassId,
         subject_id: task.subject_id,
         deadline: task.deadline,
         is_group: task.isGroup,
@@ -234,7 +274,7 @@ export async function saveScheduledTask(task: Task, entries: WorkmapEntry[]) {
 export async function updateTaskInDb(taskId: string, updates: Partial<Task>) {
   const payload: any = {};
   if (updates.title !== undefined) payload.title = updates.title;
-  if (updates.class_id !== undefined) payload.class_id = updates.class_id;
+  if (updates.class_id !== undefined) payload.class_id = normalizeClassId(updates.class_id) || DEFAULT_CLASS_ID;
   if (updates.subject_id !== undefined) payload.subject_id = updates.subject_id;
   if (updates.deadline !== undefined) payload.deadline = updates.deadline;
   if (updates.isGroup !== undefined) payload.is_group = updates.isGroup;

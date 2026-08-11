@@ -32,6 +32,7 @@ import { format } from 'date-fns';
 import { StudentOnboardingModal } from '@/components/student/StudentOnboardingModal';
 import { StudentQuizPlayerModal } from '@/components/student/StudentQuizPlayerModal';
 import { StudentWorkmapDetailModal } from '@/components/student/StudentWorkmapDetailModal';
+import { normalizeClassId, resolveStudentClassId } from '@/lib/class-utils';
 
 type SubjectColor = 'red' | 'green' | 'blue' | 'teal' | 'pink' | 'yellow' | 'purple' | 'orange';
 
@@ -109,6 +110,9 @@ export default function StudentWorkmap() {
 
   // Build day columns on Student Workmap timeline dynamically from database
   const dayColumns: DayColumn[] = useMemo(() => {
+    const currentStudentClass = resolveStudentClassId(studentProfile.classId);
+    if (!currentStudentClass) return [];
+
     const today = new Date();
     const dayNamesMap = ['CHỦ NHẬT', 'THỨ HAI', 'THỨ BA', 'THỨ TƯ', 'THỨ NĂM', 'THỨ SÁU', 'THỨ BẢY'];
     const datesToDisplay: Date[] = [];
@@ -149,14 +153,12 @@ export default function StudentWorkmap() {
       const isToday = dateStrYmd === format(today, 'yyyy-MM-dd');
       const dayName = dayNamesMap[d.getDay()];
 
-      const currentStudentClass = studentProfile.classId || '10A1';
-
       // Find workmap entries for this day from DB matching student class
       const dayEntries = workmap.filter(w => {
         if (w.date !== dateStrYmd) return false;
         const task = tasks.find(t => t.id === w.task_id);
         if (!task) return false;
-        return task.class_id === currentStudentClass;
+        return normalizeClassId(task.class_id) === currentStudentClass;
       });
       const taskBlocks: TaskBlock[] = [];
 
@@ -181,7 +183,7 @@ export default function StudentWorkmap() {
 
       // Also check tasks for student class whose deadline matches this day and don't have workmap entries yet
       tasks.forEach(t => {
-        if (t.class_id !== currentStudentClass) return;
+        if (normalizeClassId(t.class_id) !== currentStudentClass) return;
         if (t.deadline === dateStrYmd) {
           const hasWorkmapEntries = workmap.some(w => w.task_id === t.id);
           if (!hasWorkmapEntries) {
@@ -238,8 +240,9 @@ export default function StudentWorkmap() {
 
   const filteredAssignments = useMemo(() => {
     return tasks.filter(task => {
-      const studentClass = studentProfile.classId || '12A5';
-      if (task.class_id && task.class_id !== studentClass) return false;
+      const studentClass = resolveStudentClassId(studentProfile.classId);
+      if (!studentClass) return false;
+      if (normalizeClassId(task.class_id) !== studentClass) return false;
 
       if (assignmentsFilterType !== 'all' && task.type !== assignmentsFilterType) return false;
 
@@ -283,7 +286,7 @@ export default function StudentWorkmap() {
                 title="Bấm để chỉnh sửa hồ sơ & đổi lớp học"
                 className="text-[10px] font-black uppercase tracking-wider bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full cursor-pointer transition-all flex items-center gap-1 group"
               >
-                <span>{studentProfile.classId ? `Lớp ${studentProfile.classId}` : 'Lớp 10A5'}</span>
+                <span>{studentProfile.classId ? `Lớp ${studentProfile.classId}` : 'Chưa chọn lớp'}</span>
                 <span className="text-[10px] text-blue-500 opacity-70 group-hover:opacity-100 transition-opacity">✏️</span>
               </button>
             </div>
@@ -496,7 +499,7 @@ export default function StudentWorkmap() {
                                 id: task.id,
                                 title: task.title,
                                 type: 'quiz',
-                                class_id: studentProfile.classId || '10A1',
+                                class_id: studentProfile.classId,
                                 subject_id: task.subject,
                                 deadline: '2026-07-25',
                                 isGroup: false
@@ -564,7 +567,7 @@ export default function StudentWorkmap() {
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 text-blue-100 border border-white/30 px-3 py-1 rounded-full">
-                {studentProfile.classId ? `Lớp ${studentProfile.classId}` : 'Lớp 12A5'} • Hệ Thống Bài Tập
+                {studentProfile.classId ? `Lớp ${studentProfile.classId}` : 'Chưa chọn lớp'} • Hệ Thống Bài Tập
               </span>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-2">
                 Danh Sách Bài Tập & Giao Diện Làm Bài
@@ -580,7 +583,7 @@ export default function StudentWorkmap() {
               </div>
               <div className="text-xs">
                 <div className="font-extrabold text-white">Tổng bài tập được giao</div>
-                <div className="text-blue-200">Cho Lớp {studentProfile.classId || '12A5'}</div>
+                <div className="text-blue-200">Cho Lớp {studentProfile.classId || '—'}</div>
               </div>
             </div>
           </div>
@@ -631,7 +634,7 @@ export default function StudentWorkmap() {
             <h3 className="text-lg font-black text-slate-900">Không tìm thấy bài tập nào</h3>
             <p className="text-xs text-slate-500 font-semibold max-w-md mx-auto">
               {tasks.length === 0 
-                ? `Lớp ${studentProfile.classId || '12A5'} hiện chưa có bài tập nào được giao từ giáo viên trên hệ thống database.`
+                ? `Lớp ${studentProfile.classId} hiện chưa có bài tập nào được giao từ giáo viên trên hệ thống database.`
                 : 'Không có bài tập nào phù hợp với bộ lọc đã chọn.'}
             </p>
           </div>

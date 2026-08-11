@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -20,6 +20,7 @@ import { format, addDays } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useStore } from '@/store/useStore';
 import { Task } from '@/lib/engine/types';
+import { normalizeClassId, resolveStudentClassId } from '@/lib/class-utils';
 
 interface StudentWorkmapDetailModalProps {
   isOpen: boolean;
@@ -36,7 +37,12 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
 }) => {
   const { tasks, workmap, studentProfile, classes } = useStore();
 
-  const [selectedClass, setSelectedClass] = useState<string>(studentProfile.classId || '12A5');
+  const studentClass = resolveStudentClassId(studentProfile.classId);
+  const [selectedClass, setSelectedClass] = useState<string>(studentClass || '');
+
+  useEffect(() => {
+    if (studentClass) setSelectedClass(studentClass);
+  }, [studentClass]);
   const [timeRange, setTimeRange] = useState<'1-past' | '7-days' | '14-days' | 'all'>('7-days');
 
   // Compute list of days based on filters
@@ -95,7 +101,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
         if (w.date !== dateStr) return false;
         if (selectedClass !== 'all') {
           const task = tasks.find(t => t.id === w.task_id);
-          if (task && task.class_id !== selectedClass) return false;
+          if (task && normalizeClassId(task.class_id) !== normalizeClassId(selectedClass)) return false;
         }
         return true;
       });
@@ -114,7 +120,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
 
       // Include tasks with deadline matching this date if not added
       tasks.forEach(t => {
-        if (selectedClass !== 'all' && t.class_id !== selectedClass) return;
+        if (selectedClass !== 'all' && normalizeClassId(t.class_id) !== normalizeClassId(selectedClass)) return;
         if (t.deadline === dateStr) {
           if (!dayTasks.some(dt => dt.task.id === t.id)) {
             dayTasks.push({
@@ -203,11 +209,10 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
                   onChange={(e) => setSelectedClass(e.target.value)}
                   className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full sm:w-auto flex-1"
                 >
-                  <option value={studentProfile.classId || '12A5'}>Lớp {studentProfile.classId || '12A5'}</option>
+                  {studentClass && (
+                    <option value={studentClass}>Lớp {studentClass}</option>
+                  )}
                   <option value="all">Tất cả các lớp</option>
-                  <option value="10A1">Lớp 10A1</option>
-                  <option value="10A5">Lớp 10A5</option>
-                  <option value="11B2">Lớp 11B2</option>
                 </select>
               </div>
 

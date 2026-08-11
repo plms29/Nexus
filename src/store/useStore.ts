@@ -7,6 +7,7 @@ import { decideIntervention } from '../lib/engine/intervention';
 import type { InterventionDecision } from '../lib/engine/intervention';
 import { format, addDays } from 'date-fns';
 import { fetchTasks, fetchWorkmap, saveScheduledTask, updateTaskInDb, deleteTaskFromDb } from '../lib/api';
+import { DEFAULT_CLASS_ID, normalizeClassId, normalizeClassList, resolveStudentClassId } from '../lib/class-utils';
 
 interface User {
   username: string;
@@ -84,7 +85,10 @@ export const useStore = create<AppState>((set, get) => ({
   quizResults: {},
 
   setStudentProfile: (profile) => {
-    const newProfile = { ...get().studentProfile, ...profile };
+    const normalizedProfile = profile.classId
+      ? { ...profile, classId: normalizeClassId(profile.classId) }
+      : profile;
+    const newProfile = { ...get().studentProfile, ...normalizedProfile };
     set({ studentProfile: newProfile });
     if (typeof window !== 'undefined') {
       try {
@@ -148,14 +152,16 @@ export const useStore = create<AppState>((set, get) => ({
     const { fetchTeacherProfile } = await import('../lib/api');
     const { data: { user } } = await supabase.auth.getUser();
     
-    let loadedClasses = ['10A1', '10A2', '11B1', '12A5'];
+    let loadedClasses = [DEFAULT_CLASS_ID, '10A2', '11B1', '12A5'];
     let loadedSubjects = ['Ngữ văn', 'Toán', 'Vật lý', 'Hóa học', 'Tin học', 'Tiếng Anh'];
 
     if (user) {
       try {
         const profile = await fetchTeacherProfile(user.id);
         if (profile) {
-          if (profile.classes && profile.classes.length > 0) loadedClasses = profile.classes;
+          if (profile.classes && profile.classes.length > 0) {
+            loadedClasses = normalizeClassList(profile.classes);
+          }
           if (profile.subjects && profile.subjects.length > 0) loadedSubjects = profile.subjects;
         }
       } catch (e) {
@@ -191,10 +197,14 @@ export const useStore = create<AppState>((set, get) => ({
       if (profile && profile.isOnboarded) {
         activeProfile = { ...activeProfile, ...profile };
       } else {
+        const metaClassId = normalizeClassId(user.user_metadata?.class_id);
         activeProfile = {
           ...activeProfile,
           name: user.user_metadata?.name || user.user_metadata?.full_name || activeProfile.name,
           avatar: user.user_metadata?.avatar || activeProfile.avatar,
+          classId: activeProfile.classId || metaClassId,
+          school: activeProfile.school || user.user_metadata?.school || '',
+          province: activeProfile.province || user.user_metadata?.province || '',
           isOnboarded: false,
         };
       }
@@ -204,7 +214,12 @@ export const useStore = create<AppState>((set, get) => ({
       set({ studentProfile: activeProfile });
     }
 
-    const targetClass = activeProfile.classId || '10A1';
+    const targetClass = resolveStudentClassId(activeProfile.classId)
+      || normalizeClassId(user?.user_metadata?.class_id);
+    if (!targetClass) {
+      set({ tasks: [], workmap: [] });
+      return;
+    }
 
     const tasks = await fetchTasks(targetClass);
     const workmap = await fetchWorkmap(targetClass);

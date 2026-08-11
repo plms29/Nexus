@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { DEFAULT_CLASS_ID } from '@/lib/class-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -103,7 +104,7 @@ function LoginContent() {
             email: data.user.email,
             role: 'student',
             name: data.user.user_metadata?.name || 'Học sinh Nexus',
-            class_id: data.user.user_metadata?.class_id || '10A5',
+            class_id: data.user.user_metadata?.class_id || DEFAULT_CLASS_ID,
             school: data.user.user_metadata?.school || 'THPT Chuyên Lê Quý Đôn',
             province: data.user.user_metadata?.province || 'Đà Nẵng',
             avatar: data.user.user_metadata?.avatar || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=b6e3f4'
