@@ -16,6 +16,17 @@ interface OutlineItem {
   text: string;
 }
 
+/**
+ * Bỏ số phút AI hay chèn vào tên bước, ví dụ "Bước 1: Đọc lướt (10 phút)".
+ * Số phút đã có ô riêng trong bảng nên để hai chỗ thì giáo viên phải sửa hai lần.
+ */
+const stripMinutesFromName = (name: string): string =>
+  (name || '')
+    .replace(/[\(\[]\s*(khoảng\s*|~\s*)?\d+\s*(-\s*\d+\s*)?(phút|phut|p|min|mins|minutes)\s*[\)\]]/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([:.,;])/g, '$1')
+    .trim();
+
 export async function POST(req: Request) {
   try {
     const { title, topic, subject = 'Ngữ văn', classId = '10A', language, taskType = 'essay' } = await req.json();
@@ -31,7 +42,15 @@ export async function POST(req: Request) {
       try {
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-        const taskTypeLabel = taskType === 'chart' ? 'VẼ & PHÂN TÍCH BIỂU ĐỒ' : taskType === 'project' ? 'THỰC HIỆN DỰ ÁN' : 'VIẾT BÀI ESSAY';
+        const taskTypeLabels: Record<string, string> = {
+          chart: 'VẼ & PHÂN TÍCH BIỂU ĐỒ',
+          project: 'THỰC HIỆN DỰ ÁN',
+          mindmap_short: 'VẼ SƠ ĐỒ TƯ DUY CHO 1-2 BÀI',
+          mindmap_long: 'VẼ SƠ ĐỒ TƯ DUY TỔNG HỢP CẢ CHƯƠNG',
+          presentation_individual: 'CHUẨN BỊ BÀI THUYẾT TRÌNH CÁ NHÂN',
+          presentation_group: 'CHUẨN BỊ BÀI THUYẾT TRÌNH NHÓM',
+        };
+        const taskTypeLabel = taskTypeLabels[taskType] || 'VIẾT BÀI ESSAY';
 
         const prompt = `
         Bạn là Trợ lý Giáo dục AI (ExamLoad Radar).
@@ -49,6 +68,13 @@ export async function POST(req: Request) {
         Tổng thời gian làm bài của học sinh THPT cho bài viết/dự án/biểu đồ này phải từ 60 phút đến 160 phút (TUYỆT ĐỐI KHÔNG VƯỢT QUÁ 180 PHÚT):
         - Tạo 4 đến 7 bước thực hiện chi tiết với thời gian (phút) phù hợp cho từng bước.
         - Sinh Khung Dàn Ý Gợi Ý (Outline) 4-7 mục chi tiết bám sát bài tập "${title}".
+
+        [QUY TẮC ĐẶT TÊN BƯỚC]
+        - TUYỆT ĐỐI KHÔNG ghi số phút trong "stepName" (không viết "(10 phút)", "- 15 phút", "~20 phút").
+          Số phút chỉ nằm ở trường "minutes".
+        - Tên bước phải nói rõ HỌC SINH LÀM GÌ VỚI NỘI DUNG CỤ THỂ của đề bài
+          (nêu đúng tên chương/bài/số liệu/khái niệm trong đề), không dùng câu chung chung
+          kiểu "Đọc hiểu đề", "Tìm tài liệu".
 
         Trả về duy nhất dữ liệu JSON nguyên bản với cấu trúc:
         {
@@ -71,7 +97,7 @@ export async function POST(req: Request) {
           const sanitizedSteps = parsed.steps.map((s: any) => {
             let m = Math.max(5, parseInt(s.minutes) || 15);
             m = Math.min(90, m);
-            return { ...s, minutes: m };
+            return { ...s, stepName: stripMinutesFromName(s.stepName), minutes: m };
           });
 
           const totalMinutes = sanitizedSteps.reduce((acc: number, s: any) => acc + s.minutes, 0);
@@ -124,6 +150,50 @@ export async function POST(req: Request) {
         { id: 'o2', text: '2. Kế hoạch phân công công việc & Tiến độ chi tiết' },
         { id: 'o3', text: '3. Nội dung thu thập & Kết quả nghiên cứu thực tế' },
         { id: 'o4', text: '4. Tổng kết sản phẩm, bài học kinh nghiệm & Đánh giá kết quả' }
+      ];
+    } else if (taskType === 'mindmap_short' || taskType === 'mindmap_long') {
+      const isLong = taskType === 'mindmap_long';
+      const scale = isLong ? 2.4 : 1;
+      steps = [
+        { id: 'p1', stepName: isLong ? 'Đọc lại toàn bộ chương và hệ thống vở ghi' : 'Đọc lại bài/chương và xem vở ghi', minutes: Math.round(10 * scale * baseMultiplier), note: 'Nắm lại toàn bộ nội dung cần hệ thống hoá' },
+        { id: 'p2', stepName: 'Chọn lọc thông tin, rút ý chính', minutes: Math.round(15 * scale * baseMultiplier), note: 'Gạch chân từ khoá, loại bỏ chi tiết phụ' },
+        { id: 'p3', stepName: 'Chia nhánh và sắp xếp theo cấu trúc', minutes: Math.round(15 * scale), note: 'Xác định nhánh chính, nhánh phụ và thứ bậc' },
+        { id: 'p4', stepName: 'Vẽ sơ đồ tư duy', minutes: Math.round(15 * scale), note: 'Trình bày bằng màu sắc, hình khối dễ ghi nhớ' },
+        { id: 'p5', stepName: isLong ? 'Rà soát, bổ sung liên kết giữa các nhánh' : 'Kiểm tra lại', minutes: Math.round(5 * scale), note: 'Đối chiếu với sách giáo khoa xem đã đủ ý chưa' },
+      ];
+      outline = [
+        { id: 'o1', text: `1. Chủ đề trung tâm: ${safeTitle}` },
+        { id: 'o2', text: '2. Các nhánh chính (mỗi nhánh là một đơn vị kiến thức lớn)' },
+        { id: 'o3', text: '3. Nhánh phụ và từ khoá cho từng nhánh chính' },
+        { id: 'o4', text: '4. Ví dụ hoặc công thức minh hoạ gắn với từng nhánh' },
+        ...(isLong ? [{ id: 'o5', text: '5. Liên kết ngang giữa các nhánh, chỉ ra mối quan hệ kiến thức' }] : []),
+      ];
+    } else if (taskType === 'presentation_individual' || taskType === 'presentation_group') {
+      const isGroupPresentation = taskType === 'presentation_group';
+      steps = [
+        ...(isGroupPresentation
+          ? [{ id: 'p0', stepName: 'Họp nhóm phân chia công việc và rà soát', minutes: 15, note: 'Thống nhất nội dung, phân vai và mốc thời gian' }]
+          : []),
+        { id: 'p1', stepName: 'Đọc hiểu đề, xác định phạm vi và mục tiêu trình bày', minutes: Math.round(15 * baseMultiplier), note: 'Xác định thông điệp chính muốn người nghe nhớ' },
+        { id: 'p2', stepName: 'Tra cứu tài liệu và chọn lọc dẫn chứng', minutes: Math.round(30 * baseMultiplier), note: 'Ưu tiên số liệu, ví dụ thực tế thuyết phục' },
+        { id: 'p3', stepName: 'Xây dựng dàn ý và nội dung slide', minutes: Math.round(30 * baseMultiplier), note: 'Mỗi slide một ý, tránh chép nguyên đoạn văn' },
+        { id: 'p4', stepName: 'Thiết kế slide và hình ảnh minh hoạ', minutes: 30, note: 'Chú ý cỡ chữ, tương phản màu để nhìn rõ từ xa' },
+        { id: 'p5', stepName: 'Tổng hợp nguồn tham khảo', minutes: 10, note: 'Ghi rõ nguồn cho mọi số liệu và hình ảnh' },
+        { id: 'p6', stepName: 'Luyện nói và bấm giờ phần trình bày', minutes: Math.round(25 * baseMultiplier), note: 'Tập nói thành tiếng, canh đúng thời lượng cho phép' },
+        ...(isGroupPresentation
+          ? [{ id: 'p7', stepName: 'Tập duyệt trình bày sản phẩm cùng nhóm', minutes: 30, note: 'Ghép phần các thành viên, xử lý chuyển tiếp' }]
+          : []),
+      ];
+      outline = [
+        { id: 'o1', text: `1. Mở đầu: Giới thiệu chủ đề "${safeTitle}" và thông điệp chính` },
+        { id: 'o2', text: '2. Bối cảnh và lý do chủ đề này đáng quan tâm' },
+        { id: 'o3', text: '3. Nội dung trọng tâm 1 kèm dẫn chứng cụ thể' },
+        { id: 'o4', text: '4. Nội dung trọng tâm 2 kèm số liệu hoặc ví dụ' },
+        { id: 'o5', text: '5. Liên hệ thực tế với bản thân và lớp học' },
+        { id: 'o6', text: '6. Kết luận và câu hỏi thảo luận cho người nghe' },
+        ...(isGroupPresentation
+          ? [{ id: 'o7', text: '7. Bảng phân công: ai trình bày phần nào, thời lượng bao lâu' }]
+          : []),
       ];
     } else {
       // essay or default

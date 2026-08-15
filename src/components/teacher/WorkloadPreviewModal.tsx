@@ -21,19 +21,31 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
-import { MAX_LU_PER_DAY } from '@/lib/engine/calculator';
+import { MAX_LU_PER_DAY, MAX_LU_PER_WEEK, calculateLU } from '@/lib/engine/calculator';
+import { checkWeeklyQuota } from '@/lib/engine/detector';
+import { getSubjectGroup } from '@/lib/engine/subject-group';
+import { getClassOrientation, normalizeClassId } from '@/lib/class-utils';
+import { checkLateAssignment, LATE_ASSIGNMENT_HOUR } from '@/lib/engine/late-assignment';
+import { getTaskTypeLabel, isDecomposableType } from '@/lib/engine/task-templates';
+import { planStepDates, buildExistingMinutesByDate } from '@/lib/engine/step-scheduler';
 
 interface BreakdownStep {
   name: string;
   lu: number;
   min: number;
   dayOffset: number;
+  /** Ngày đã chốt cho bước này, do AI xếp hoặc giáo viên chỉnh tay */
+  date?: string;
 }
 
 interface WorkloadPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (overrideReason?: string) => void;
+  onConfirm: (
+    overrideReason?: string,
+    severity?: 'critical' | 'soft',
+    excessMinutes?: number
+  ) => void;
   taskData: {
     title: string;
     type: TaskType;
@@ -49,15 +61,6 @@ interface WorkloadPreviewModalProps {
   onUpdateIsGroup?: (isGroup: boolean) => void;
 }
 
-const getTaskTypeLabel = (type: TaskType) => {
-  switch (type) {
-    case 'quiz': return 'Trắc nghiệm (Nguyên khối)';
-    case 'chart': return 'Biểu đồ (Chia nhỏ)';
-    case 'essay': return 'Bài Luận (Chia nhỏ)';
-    case 'project': return 'Dự án (Chia nhỏ)';
-    default: return type;
-  }
-};
 
 const formatSubjectName = (subId?: string) => {
   if (!subId) return 'Môn học';
@@ -110,7 +113,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
     if (dates.length === 0) dates.push(taskData.startDate);
 
     // Map existing workmap entries for class
-    const existingByDate: Record<string, { totalLU: number; totalMin: number; items: { subject: string; title: string; lu: number }[] }> = {};
+    const existingByDate: Record<string, { totalLU: number; totalMin: number; items: { subject: string; title: string; lu: number; min: number }[] }> = {};
     
     dates.forEach(d => {
       const classEntries = workmap.filter(e => {
@@ -127,7 +130,8 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
         return {
           subject: formatSubjectName(t?.subject_id),
           title: t?.title || e.step_name || 'Bài tập khác',
-          lu: e.lu
+          lu: e.lu,
+          min: Number(e.minutes) || Math.round(e.lu * 30)
         };
       });
 
@@ -140,54 +144,30 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
       dayOfWeek: string;
       newSteps: { name: string; min: number; lu: number }[];
       existingLU: number;
-      existingItems: { subject: string; title: string; lu: number }[];
+      existingItems: { subject: string; title: string; lu: number; min: number }[];
     }> = {};
 
     if (breakdownSteps && breakdownSteps.length > 0) {
-      // Decomposable simulation
-      let stepIdx = 0;
-      for (const d of dates) {
-        if (stepIdx >= breakdownSteps.length) break;
+      // Bám đúng ngày đã chốt cho từng bước (AI xếp hoặc giáo viên chỉnh tay),
+      // chỉ xếp lại những bước chưa có ngày hợp lệ. Không dồn tất cả vào ngày đầu.
+      const plannedDates = planStepDates(
+        breakdownSteps,
+        dates,
+        buildExistingMinutesByDate(
+          workmap,
+          tasks,
+          (t) => !t || normalizeClassId(t.class_id) === normalizeClassId(taskData.classId)
+        )
+      );
+
+      breakdownSteps.forEach((step, i) => {
+        const d = plannedDates[i] || dates[dates.length - 1];
         const currentData = existingByDate[d] || { totalLU: 0, totalMin: 0, items: [] };
-        let availableMinutes = 150 - currentData.totalLU * 30;
+        const dateObj = parseISO(d);
 
-        while (stepIdx < breakdownSteps.length && availableMinutes >= breakdownSteps[stepIdx].min) {
-          const step = breakdownSteps[stepIdx];
-          const dateObj = parseISO(d);
-
-          if (!dateMap[d]) {
-            dateMap[d] = {
-              dateStr: d,
-              formattedDate: format(dateObj, 'dd/MM/yyyy'),
-              dayOfWeek: format(dateObj, 'EEEE', { locale: vi }),
-              newSteps: [],
-              existingLU: currentData.totalLU,
-              existingItems: currentData.items
-            };
-          }
-
-          dateMap[d].newSteps.push({
-            name: step.name,
-            min: step.min,
-            lu: step.lu
-          });
-
-          currentData.totalLU += step.lu;
-          availableMinutes -= step.min;
-          stepIdx++;
-        }
-      }
-
-      // If leftover steps couldn't fit in non-overloaded days, push to deadline
-      while (stepIdx < breakdownSteps.length) {
-        const step = breakdownSteps[stepIdx];
-        const lastDate = dates[dates.length - 1];
-        const currentData = existingByDate[lastDate] || { totalLU: 0, totalMin: 0, items: [] };
-        const dateObj = parseISO(lastDate);
-
-        if (!dateMap[lastDate]) {
-          dateMap[lastDate] = {
-            dateStr: lastDate,
+        if (!dateMap[d]) {
+          dateMap[d] = {
+            dateStr: d,
             formattedDate: format(dateObj, 'dd/MM/yyyy'),
             dayOfWeek: format(dateObj, 'EEEE', { locale: vi }),
             newSteps: [],
@@ -196,15 +176,12 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
           };
         }
 
-        dateMap[lastDate].newSteps.push({
+        dateMap[d].newSteps.push({
           name: step.name,
           min: step.min,
           lu: step.lu
         });
-
-        currentData.totalLU += step.lu;
-        stepIdx++;
-      }
+      });
     } else {
       // Non-decomposable simulation: find best date in range
       let scheduledDate = dates[0];
@@ -233,7 +210,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
       };
     }
 
-    return Object.values(dateMap).map(day => {
+    return Object.values(dateMap).sort((a, b) => a.dateStr.localeCompare(b.dateStr)).map(day => {
       const totalNewLU = day.newSteps.reduce((acc, s) => acc + s.lu, 0);
       const totalNewMin = day.newSteps.reduce((acc, s) => acc + s.min, 0);
       const totalLUAfter = day.existingLU + totalNewLU;
@@ -259,7 +236,56 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
   const hasAnyCritical = previewSchedule.some(s => s.isOverloaded);
   const maxDayLU = Math.max(0, ...previewSchedule.map(s => s.totalLUAfter));
 
-  const isDecomposable = taskData.type !== 'quiz';
+  // Tỷ lệ 70/30 giữa hai ban, tính trên tổng LU của tuần chứa các ngày được xếp lịch
+  const weeklyQuota = useMemo(() => {
+    if (!isOpen || previewSchedule.length === 0) return null;
+
+    const anchor = parseISO(previewSchedule[0].dateStr);
+    // Lùi về thứ Hai của tuần chứa ngày đầu tiên (getDay: 0 là Chủ nhật)
+    const monday = addDays(anchor, anchor.getDay() === 0 ? -6 : 1 - anchor.getDay());
+    const weekDates = Array.from({ length: 7 }, (_, i) => format(addDays(monday, i), 'yyyy-MM-dd'));
+
+    const classId = normalizeClassId(taskData.classId);
+    const existingEntries: WorkmapEntry[] = workmap.filter(e => {
+      const t = tasks.find(tk => tk.id === e.task_id);
+      return t ? normalizeClassId(t.class_id) === classId : false;
+    });
+
+    const subjectGroup = getSubjectGroup(taskData.subjectId);
+    const newEntries: WorkmapEntry[] = previewSchedule.flatMap(day =>
+      day.newSteps.map(step => ({
+        date: day.dateStr,
+        subject_group: subjectGroup,
+        minutes: step.min,
+        lu: step.lu,
+        task_id: 'preview',
+        step_name: step.name,
+      }))
+    );
+
+    return {
+      ...checkWeeklyQuota(weekDates, existingEntries, newEntries, getClassOrientation(classId)),
+      orientation: getClassOrientation(classId),
+      subjectGroup,
+    };
+  }, [isOpen, previewSchedule, workmap, tasks, taskData.classId, taskData.subjectId]);
+
+  // Luật giao bài sau 19:00: hôm đó không còn là ngày làm bài hợp lệ
+  const lateCheck = useMemo(
+    () => (isOpen ? checkLateAssignment(taskData.startDate, taskData.deadline) : null),
+    [isOpen, taskData.startDate, taskData.deadline]
+  );
+
+  // Phải nhập lý do khi quá tải ngày, hoặc khi giao gấp sau 19:00 mà không còn ngày làm bài
+  const requiresOverride = hasAnyCritical || !!lateCheck?.isDeadlineTooTight;
+
+  // Số phút vượt ngưỡng 5 LU/ngày ở ngày nặng nhất, dùng để phân mức nghiêm trọng trong audit log
+  const excessMinutes = Math.max(0, Math.round(maxDayLU * 30 - MAX_LU_PER_DAY * 30));
+  // Theo tài liệu: vượt trên 30 phút thì phải trình bày lý do cho nhà trường
+  const overrideSeverity: 'critical' | 'soft' =
+    excessMinutes > 30 || lateCheck?.isDeadlineTooTight ? 'critical' : 'soft';
+
+  const isDecomposable = isDecomposableType(taskData.type);
   const suggestedNewDeadlineObj = useMemo(() => {
     if (!taskData.deadline) return null;
     try {
@@ -339,7 +365,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
               <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3 shadow-2xs">
                 <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Bộ môn & Dạng</div>
                 <div className="font-extrabold text-slate-900 truncate mt-0.5">
-                  Môn {formatSubjectName(taskData.subjectId)} • {taskData.type === 'quiz' ? 'Trắc nghiệm' : taskData.type === 'essay' ? 'Tự luận' : taskData.type === 'project' ? 'Dự án' : 'Biểu đồ'}
+                  Môn {formatSubjectName(taskData.subjectId)} • {getTaskTypeLabel(taskData.type)}
                 </div>
               </div>
 
@@ -347,7 +373,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                 <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Tổng thời lượng</div>
                 <div className="font-black text-blue-600 mt-0.5 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-blue-600" />
-                  {totalNewMinutes} phút ({totalNewLU.toFixed(1)} LU)
+                  {totalNewMinutes} phút ({calculateLU(totalNewMinutes)} LU)
                 </div>
               </div>
 
@@ -396,6 +422,114 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                 </p>
               </div>
             </div>
+
+            {/* Cảnh báo giao bài sau 19:00 */}
+            {lateCheck && lateCheck.isLate && (
+              <div className={clsx(
+                "rounded-2xl p-4 border shadow-sm flex items-start gap-3.5",
+                lateCheck.isDeadlineTooTight
+                  ? "bg-rose-50 border-rose-200"
+                  : "bg-amber-50 border-amber-200"
+              )}>
+                <div className={clsx(
+                  "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm text-white",
+                  lateCheck.isDeadlineTooTight ? "bg-rose-600" : "bg-amber-600"
+                )}>
+                  <Clock className="w-5 h-5" />
+                </div>
+
+                <div className="space-y-1.5 text-xs flex-1">
+                  <h4 className={clsx(
+                    "font-black text-sm tracking-tight",
+                    lateCheck.isDeadlineTooTight ? "text-rose-950" : "text-amber-950"
+                  )}>
+                    {lateCheck.isDeadlineTooTight
+                      ? `Giao Bài Quá Gấp Sau ${LATE_ASSIGNMENT_HOUR}:00!`
+                      : `Giao Bài Sau ${LATE_ASSIGNMENT_HOUR}:00 - Lịch Bắt Đầu Từ Ngày Mai`}
+                  </h4>
+                  <p className="font-semibold text-slate-600 leading-relaxed">
+                    {lateCheck.reason}
+                  </p>
+
+                  {lateCheck.isDeadlineTooTight && onUpdateDeadline && (
+                    <button
+                      type="button"
+                      onClick={() => onUpdateDeadline(lateCheck.suggestedDeadline)}
+                      className="mt-1 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <CalendarIcon className="w-3.5 h-3.5" />
+                      Dời hạn nộp sang {lateCheck.suggestedDeadline}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Cân đối tỷ lệ 70/30 giữa hai ban trong tuần */}
+            {weeklyQuota && weeklyQuota.totalLU > 0 && (
+              <div className={clsx(
+                "rounded-2xl p-4 border shadow-sm space-y-3",
+                weeklyQuota.isValid
+                  ? "bg-white border-slate-200/90"
+                  : "bg-amber-50/70 border-amber-200"
+              )}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-black text-sm text-slate-900 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-indigo-600" />
+                      Cân Đối Tỷ Lệ Tự Nhiên / Xã Hội Trong Tuần
+                    </h4>
+                    <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
+                      Lớp {taskData.classId} thuộc ban{' '}
+                      <strong className="text-slate-700">
+                        {weeklyQuota.orientation === 'natural' ? 'tự nhiên' : 'xã hội'}
+                      </strong>
+                      {' '}— chuẩn 70% cho nhóm môn chính, 30% cho nhóm còn lại.
+                    </p>
+                  </div>
+                  <span className={clsx(
+                    "text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shrink-0",
+                    weeklyQuota.isValid
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-amber-100 text-amber-800 border-amber-300"
+                  )}>
+                    {weeklyQuota.isValid ? 'Cân đối' : 'Lệch tỷ lệ'}
+                  </span>
+                </div>
+
+                {/* Thanh tỷ lệ hai nhóm môn */}
+                <div className="space-y-1.5">
+                  <div className="flex h-3 w-full rounded-full overflow-hidden bg-slate-100 border border-slate-200">
+                    <div
+                      className="bg-blue-500 h-full transition-all duration-500"
+                      style={{ width: `${weeklyQuota.ratioNatural * 100}%` }}
+                    />
+                    <div
+                      className="bg-purple-500 h-full transition-all duration-500"
+                      style={{ width: `${weeklyQuota.ratioSocial * 100}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] font-extrabold">
+                    <span className="text-blue-700">
+                      Tự nhiên {Math.round(weeklyQuota.ratioNatural * 100)}% ({weeklyQuota.naturalLU.toFixed(1)} LU)
+                    </span>
+                    <span className="text-slate-500">
+                      Tổng tuần {weeklyQuota.totalLU.toFixed(1)} / {MAX_LU_PER_WEEK} LU
+                    </span>
+                    <span className="text-purple-700">
+                      Xã hội {Math.round(weeklyQuota.ratioSocial * 100)}% ({weeklyQuota.socialLU.toFixed(1)} LU)
+                    </span>
+                  </div>
+                </div>
+
+                {weeklyQuota.reason && (
+                  <div className="flex items-start gap-2 text-[11px] font-semibold text-amber-900 bg-amber-100/70 border border-amber-200 rounded-xl p-2.5">
+                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>{weeklyQuota.reason}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ExamLoad Overload Processing Workflow Solutions Panel */}
             {hasAnyCritical && (
@@ -556,7 +690,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                             </div>
                           </div>
                           <span className="text-xs font-extrabold text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-xl shrink-0 shadow-2xs">
-                            {exItem.lu} LU ({exItem.lu * 30}m)
+                            {exItem.lu.toFixed(1)} LU ({exItem.min}m)
                           </span>
                         </div>
                       ))}
@@ -628,7 +762,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
             </button>
 
             <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-              {hasAnyCritical && (
+              {requiresOverride && (
                 <button
                   type="button"
                   onClick={() => setShowOverrideModal(true)}
@@ -642,7 +776,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (hasAnyCritical) {
+                  if (requiresOverride) {
                     setShowOverrideModal(true);
                   } else {
                     onConfirm();
@@ -656,7 +790,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                 )}
               >
                 <CheckCircle2 className="w-4 h-4" />
-                {hasAnyCritical ? 'Bắt Buộc Giao Bài (Cần Ghi Đè)' : 'Xác Nhận & Chính Thức Giao Bài'}
+                {requiresOverride ? 'Bắt Buộc Giao Bài (Cần Ghi Đè)' : 'Xác Nhận & Chính Thức Giao Bài'}
               </button>
             </div>
           </div>
@@ -690,7 +824,9 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                     Ghi Đè Cảnh Báo & Lưu Audit Log
                   </h3>
                   <p className="text-xs text-slate-500 font-semibold">
-                    Xác nhận giao bài dù tải công việc vượt 5.0 LU/ngày.
+                    {lateCheck?.isDeadlineTooTight && !hasAnyCritical
+                      ? `Xác nhận giao bài dù đã quá ${LATE_ASSIGNMENT_HOUR}:00 và học sinh không còn ngày trọn vẹn để làm.`
+                      : 'Xác nhận giao bài dù tải công việc vượt 5.0 LU/ngày.'}
                   </p>
                 </div>
               </div>
@@ -700,6 +836,9 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                   Vui lòng chọn hoặc nhập lý do ghi đè (Lưu nhật ký hệ thống):
                 </label>
                 {[
+                  ...(lateCheck?.isDeadlineTooTight
+                    ? [`Giao gấp sau ${LATE_ASSIGNMENT_HOUR}:00 do yêu cầu đột xuất của nhà trường`]
+                    : []),
                   'Bài kiểm tra trọng tâm bắt buộc theo kế hoạch bộ môn',
                   'Lớp học đã được chuẩn bị bài trước từ tuần trước',
                   'Đã thỏa thuận và thống nhất khối lượng làm việc với học sinh',
@@ -748,11 +887,11 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const finalReason = selectedReasonOption.includes('Khác') 
-                      ? (customReasonText || 'Ghi đè cảnh báo quá tải') 
+                    const finalReason = selectedReasonOption.includes('Khác')
+                      ? (customReasonText || 'Ghi đè cảnh báo quá tải')
                       : selectedReasonOption;
                     setShowOverrideModal(false);
-                    onConfirm(finalReason);
+                    onConfirm(finalReason, overrideSeverity, excessMinutes);
                   }}
                   className="px-5 py-2 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-500/20 cursor-pointer"
                 >

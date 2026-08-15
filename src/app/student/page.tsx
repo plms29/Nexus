@@ -33,6 +33,8 @@ import { StudentOnboardingModal } from '@/components/student/StudentOnboardingMo
 import { StudentQuizPlayerModal } from '@/components/student/StudentQuizPlayerModal';
 import { StudentWorkmapDetailModal } from '@/components/student/StudentWorkmapDetailModal';
 import { normalizeClassId, resolveStudentClassId } from '@/lib/class-utils';
+import { calculateLU } from '@/lib/engine/calculator';
+import { TASK_TYPE_OPTIONS, getTaskTypeLabel } from '@/lib/engine/task-templates';
 
 type SubjectColor = 'red' | 'green' | 'blue' | 'teal' | 'pink' | 'yellow' | 'purple' | 'orange';
 
@@ -41,6 +43,8 @@ interface TaskBlock {
   subject: string;
   title: string;
   lu: number;
+  /** Số phút thật của mục workmap, tránh hiển thị lệch khi làm tròn LU */
+  minutes?: number;
   color: SubjectColor;
   isQuiz?: boolean;
   isEssay?: boolean;
@@ -172,6 +176,7 @@ export default function StudentWorkmap() {
             subject: (task.subject_id || 'MÔN HỌC').toUpperCase(),
             title: entry.step_name ? `${task.title} (${entry.step_name})` : task.title,
             lu: roundedLu,
+            minutes: Number(entry.minutes) || Math.round(rawLu * 30),
             color: task.subject_id === 'Ngữ văn' ? 'blue' : task.subject_id === 'Tiếng Anh' ? 'purple' : task.type === 'quiz' ? 'yellow' : 'teal',
             isEssay: task.type !== 'quiz',
             isQuiz: task.type === 'quiz',
@@ -540,7 +545,7 @@ export default function StudentWorkmap() {
 
                           <div className="flex items-center justify-between pt-1.5 border-t border-white/20">
                             <div className={clsx("text-[10px] px-2 py-0.5 rounded-lg font-black flex items-center gap-1", badgeStyles[task.color])}>
-                              {task.lu} LU ({Math.round(task.lu * 30)}m)
+                              {task.lu} LU ({task.minutes ?? Math.round(task.lu * 30)}m)
                             </div>
                             <span className="text-[10px] font-black underline opacity-90 group-hover:opacity-100 flex items-center gap-0.5">
                               {task.isQuiz ? 'Vào làm ngay ➔' : 'Xem dàn ý ➔'}
@@ -609,8 +614,9 @@ export default function StudentWorkmap() {
               className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="all">Tất cả loại bài tập</option>
-              <option value="quiz">🎯 Trắc nghiệm Quiz</option>
-              <option value="essay">📝 Bài luận Essay</option>
+              {TASK_TYPE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
 
             <select
@@ -643,6 +649,10 @@ export default function StudentWorkmap() {
             {filteredAssignments.map((task) => {
               const quizRes = quizResults[task.id];
               const isDone = !!quizRes;
+              // Tải thật của bài, cộng từ các mục workmap giáo viên đã xếp
+              const taskMinutes = workmap
+                .filter(w => w.task_id === task.id)
+                .reduce((sum, w) => sum + Number(w.minutes), 0);
 
               return (
                 <div
@@ -660,7 +670,7 @@ export default function StudentWorkmap() {
                           ? "bg-amber-50 text-amber-800 border-amber-200" 
                           : "bg-indigo-50 text-indigo-800 border-indigo-200"
                       )}>
-                        {task.type === 'quiz' ? '🎯 Trắc nghiệm Quiz' : '📝 Bài luận Essay'}
+                        {task.type === 'quiz' ? '🎯 ' : '📝 '}{getTaskTypeLabel(task.type)}
                       </span>
                     </div>
 
@@ -688,7 +698,9 @@ export default function StudentWorkmap() {
 
                   <div className="pt-5 border-t border-slate-100 mt-4 flex items-center justify-between gap-3">
                     <span className="text-xs font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
-                      {task.type === 'quiz' ? '1.5 LU (45m)' : '2.5 LU (75m)'}
+                      {taskMinutes > 0
+                        ? `${calculateLU(taskMinutes)} LU (${taskMinutes} phút)`
+                        : 'Chưa xếp lịch'}
                     </span>
 
                     <button

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '@/store/useStore';
 import { TaskType, Task } from '@/lib/engine/types';
 import { WorkmapCalendar } from './WorkmapCalendar';
@@ -8,9 +8,10 @@ import EssaySetup, { ProcessStepItem, OutlineItem } from './EssaySetup';
 import { 
   fetchQuestionPackages, 
   fetchQuestionsForPackage, 
-  saveQuestionInDb, 
-  QuestionPackage, 
-  QuestionItem 
+  saveQuestionInDb,
+  saveAuditLog,
+  QuestionPackage,
+  QuestionItem
 } from '@/lib/api';
 import { 
   Sparkles, 
@@ -34,6 +35,25 @@ import clsx from 'clsx';
 import { DatePicker } from '@/components/ui/date-picker';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DEFAULT_CLASS_ID, normalizeClassId } from '@/lib/class-utils';
+import {
+  DEFAULT_SECONDS_PER_LEVEL,
+  LEVEL_LABELS,
+  QUESTION_LEVELS,
+  calculateQuizDuration,
+  type QuestionLevel,
+} from '@/lib/engine/calculator';
+import {
+  TASK_TYPE_OPTIONS,
+  GROUP_MEETING_MINUTES,
+  GROUP_REHEARSAL_MINUTES,
+  getTemplateSteps,
+  isDecomposableType,
+} from '@/lib/engine/task-templates';
+import {
+  buildDateRange,
+  buildExistingMinutesByDate,
+  withPlannedDates,
+} from '@/lib/engine/step-scheduler';
 
 const DRAFT_STORAGE_KEY = 'nexus_assignment_form_draft_v1';
 
@@ -42,7 +62,7 @@ interface AssignmentFormProps {
 }
 
 export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQuestionBank }) => {
-  const { autoScheduleTask, selectedDate, classes, subjects } = useStore();
+  const { autoScheduleTask, selectedDate, classes, subjects, workmap, tasks } = useStore();
 
   const availableClasses = classes || [];
   const availableSubjects = subjects || [];
@@ -67,17 +87,32 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
   const [selectedPackageQuestions, setSelectedPackageQuestions] = useState<QuestionItem[]>([]);
   const [isLoadingPkgQuestions, setIsLoadingPkgQuestions] = useState<boolean>(false);
 
+  // Định mức giây/câu theo mức độ, giáo viên chỉnh được trước khi giao bài
+  const [secondsPerLevel, setSecondsPerLevel] = useState<Record<QuestionLevel, number>>(DEFAULT_SECONDS_PER_LEVEL);
+  const [showLevelRateEditor, setShowLevelRateEditor] = useState<boolean>(false);
+  // Đánh dấu khi giáo viên tự gõ số phút, để không bị ma trận độ khó ghi đè
+  const [minutesManuallySet, setMinutesManuallySet] = useState<boolean>(false);
+
+  const quizDuration = useMemo(
+    () => calculateQuizDuration(selectedPackageQuestions, secondsPerLevel),
+    [selectedPackageQuestions, secondsPerLevel]
+  );
+
   // Breakdown & Preview Modal State
   const [analyzing, setAnalyzing] = useState(false);
   const [submittedTaskTitle, setSubmittedTaskTitle] = useState<string | null>(null);
-  interface BreakdownStep { name: string; lu: number; min: number; dayOffset: number; }
+  interface BreakdownStep { name: string; lu: number; min: number; dayOffset: number; date?: string; }
   const [breakdown, setBreakdown] = useState<BreakdownStep[] | null>(null);
   const [showWorkloadPreview, setShowWorkloadPreview] = useState<boolean>(false);
+  // Đánh dấu giáo viên đã tự đổi lịch của ít nhất một bước
+  const [hasManualStepDates, setHasManualStepDates] = useState<boolean>(false);
 
   // Essay Specific State (Outline & Process Steps)
   const [topic, setTopic] = useState<string>('');
   const [showConfirmPromptModal, setShowConfirmPromptModal] = useState<boolean>(false);
   const [hasConfirmedPrompt, setHasConfirmedPrompt] = useState<boolean>(false);
+  // Mỗi lần xác nhận prompt lại kích hoạt AI phân tích với nội dung mới nhất
+  const [promptVersion, setPromptVersion] = useState<number>(0);
   const [essaySteps, setEssaySteps] = useState<ProcessStepItem[]>([]);
   const [essayOutline, setEssayOutline] = useState<OutlineItem[]>([]);
   const [isOutlineApproved, setIsOutlineApproved] = useState<boolean>(true);
@@ -92,18 +127,32 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
     });
   }, []);
 
-  // Sync selected package questions & auto calculate minutes
+  // Sync selected package questions
   useEffect(() => {
     if (selectedPackageId) {
       setIsLoadingPkgQuestions(true);
       fetchQuestionsForPackage(selectedPackageId).then(qList => {
         setSelectedPackageQuestions(qList);
         setIsLoadingPkgQuestions(false);
-        const autoMin = Math.max(15, Math.ceil((qList.length * 90) / 60));
-        setMinutes(autoMin);
+        // Gói mới thì tính lại thời gian từ ma trận độ khó
+        setMinutesManuallySet(false);
       });
     }
   }, [selectedPackageId]);
+
+  // Thời gian làm quiz suy từ ma trận độ khó L1-L4, trừ khi giáo viên tự nhập số phút
+  useEffect(() => {
+    if (type !== 'quiz' || minutesManuallySet) return;
+    if (quizDuration.totalQuestions === 0) return;
+    setMinutes(quizDuration.totalMinutes);
+  }, [type, quizDuration, minutesManuallySet]);
+
+  // Đổi sang dạng nguyên khối không phải trắc nghiệm (ví dụ Tự luận) thì bỏ số phút
+  // suy từ ma trận độ khó của gói câu hỏi, vì nó không còn ý nghĩa cho dạng bài này.
+  useEffect(() => {
+    if (type === 'quiz' || isDecomposableType(type)) return;
+    setMinutes(m => (m >= 15 ? m : 30));
+  }, [type]);
 
   // Load draft from sessionStorage on mount
   useEffect(() => {
@@ -153,18 +202,51 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
     if (availableSubjects.length > 0 && !subjects?.includes(subjectId)) setSubjectId(availableSubjects[0]);
   }, [classes, subjects]);
 
+  // Tải nền của lớp theo từng ngày, để không xếp bài mới vào ngày đã kín
+  const existingMinutesByDate = useMemo(
+    () => buildExistingMinutesByDate(
+      workmap || [],
+      tasks || [],
+      (task) => !task || normalizeClassId(task.class_id) === normalizeClassId(classId)
+    ),
+    [workmap, tasks, classId]
+  );
+
+  const scheduleDates = useMemo(
+    () => buildDateRange(startDate, deadline),
+    [startDate, deadline]
+  );
+
+  /** Xếp lại ngày cho toàn bộ các bước theo khoảng ngày và tải hiện có */
+  const planBreakdown = (steps: BreakdownStep[], keepManualDates: boolean): BreakdownStep[] =>
+    withPlannedDates(
+      steps.map(s => ({ ...s, date: keepManualDates ? s.date : undefined })),
+      scheduleDates,
+      existingMinutesByDate
+    );
+
+  // Đổi ngày giao / hạn nộp thì xếp lại lịch các bước cho khớp khoảng thời gian mới
+  useEffect(() => {
+    if (!breakdown || breakdown.length === 0) return;
+    const replanned = planBreakdown(breakdown, hasManualStepDates);
+    const changed = replanned.some((s, i) => s.date !== breakdown[i].date);
+    if (changed) setBreakdown(replanned);
+  }, [startDate, deadline]);
+
   const resetForm = () => {
     setTitle('');
     setStep(1);
     setBreakdown(null);
     setSubmittedTaskTitle(null);
     setHasConfirmedPrompt(false);
+    setHasManualStepDates(false);
     try {
       sessionStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch (e) {}
   };
 
-  const isDecomposable = type !== 'quiz';
+  const isDecomposable = isDecomposableType(type);
+  const isGroupOnlyType = !!TASK_TYPE_OPTIONS.find(o => o.value === type)?.groupOnly;
 
   const handleFormSubmit = () => {
     if (step < 3) {
@@ -208,40 +290,30 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
           }));
           const totalMin = essaySteps.reduce((acc, s) => acc + s.minutes, 0);
           setMinutes(totalMin);
-        } else if (type === 'essay') {
-          generatedSteps = [
-            { name: 'Đọc hiểu đề và xác định phạm vi nội dung', lu: 0.5, min: 15, dayOffset: 0 },
-            { name: 'Tra cứu thông tin và kiểm tra lại tính xác thực', lu: 0.67, min: 20, dayOffset: 1 },
-            { name: 'Xác định từ khóa/ý chính và luận điểm', lu: 0.33, min: 10, dayOffset: 1 },
-            { name: 'Lập dàn ý chi tiết', lu: 0.33, min: 10, dayOffset: 2 },
-            { name: 'Viết essay', lu: 1.5, min: 45, dayOffset: 3 },
-            { name: 'Đọc lại bài, chỉnh sửa và hoàn thiện', lu: 0.33, min: 10, dayOffset: 4 },
-            { name: 'Tổng hợp lại các tài liệu tham khảo', lu: 0.17, min: 5, dayOffset: 4 }
-          ];
-        } else if (type === 'chart') {
-          generatedSteps = [
-            { name: 'Đọc hiểu số liệu & xác định mục tiêu biểu đồ', lu: 0.5, min: 15, dayOffset: 0 },
-            { name: 'Xử lý, tính toán số liệu & phân loại dữ liệu', lu: 0.67, min: 20, dayOffset: 1 },
-            { name: 'Lựa chọn dạng biểu đồ & dựng khung/trục', lu: 0.5, min: 15, dayOffset: 1 },
-            { name: 'Vẽ biểu đồ chi tiết & điền chú giải', lu: 1, min: 30, dayOffset: 2 },
-            { name: 'Nhận xét, phân tích xu hướng & rút ra kết luận', lu: 0.83, min: 25, dayOffset: 3 },
-            { name: 'Rà soát, kiểm tra độ chính xác & hoàn thiện', lu: 0.33, min: 10, dayOffset: 4 }
-          ];
         } else {
-          generatedSteps = [
-            { name: 'Lên kế hoạch dự án', lu: 1, min: 30, dayOffset: 0 },
-            { name: 'Thu thập dữ liệu', lu: 2, min: 60, dayOffset: 1 },
-            { name: 'Thực hiện', lu: 3, min: 90, dayOffset: 3 },
-            { name: 'Chuẩn bị thuyết trình', lu: 1, min: 30, dayOffset: 4 }
-          ];
+          // Bộ bước mặc định theo dạng bài, đã cộng phần điều phối nếu là bài nhóm
+          generatedSteps = getTemplateSteps(type, isGroup).map(s => ({
+            name: s.name,
+            min: s.min,
+            lu: s.min / 30,
+            dayOffset: s.dayOffset,
+          }));
+          setMinutes(generatedSteps.reduce((acc, s) => acc + s.min, 0));
         }
+        // Gộp các bước liên quan vào cùng một ngày thay vì rải mỗi ngày một bước,
+        // đồng thời né những ngày lớp đã kín tải.
+        generatedSteps = planBreakdown(generatedSteps, hasManualStepDates);
         setBreakdown(generatedSteps);
       }
       setShowWorkloadPreview(true);
     }, 800);
   };
 
-  const handleConfirmSchedule = async (overrideReason?: string) => {
+  const handleConfirmSchedule = async (
+    overrideReason?: string,
+    overrideSeverity: 'critical' | 'soft' = 'critical',
+    overrideExcessMinutes?: number
+  ) => {
     const normalizedClassId = normalizeClassId(classId) || DEFAULT_CLASS_ID;
     const newTask: Task = {
       id: crypto.randomUUID(),
@@ -257,13 +329,19 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
     };
 
     if (overrideReason) {
-      console.log('[Audit Log Override Saved]:', {
-        taskId: newTask.id,
-        title,
-        classId,
-        overrideReason,
-        timestamp: new Date().toISOString()
+      const res = await saveAuditLog({
+        task_id: newTask.id,
+        task_title: title,
+        class_id: normalizedClassId,
+        subject_id: subjectId,
+        reason: overrideReason,
+        severity: overrideSeverity,
+        excess_minutes: overrideExcessMinutes,
+        deadline,
       });
+      if (!res.success) {
+        alert('Không lưu được nhật ký ghi đè: ' + (res.error?.message || 'lỗi không xác định'));
+      }
     }
 
     if (isDecomposable && breakdown) {
@@ -456,13 +534,17 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                     <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Dạng Bài</label>
                     <select
                       value={type}
-                      onChange={e => setType(e.target.value as TaskType)}
+                      onChange={e => {
+                        const newType = e.target.value as TaskType;
+                        setType(newType);
+                        // Thuyết trình nhóm thì bắt buộc là bài làm nhóm
+                        if (TASK_TYPE_OPTIONS.find(o => o.value === newType)?.groupOnly) setIsGroup(true);
+                      }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                     >
-                      <option value="quiz">Trắc nghiệm (Nguyên khối)</option>
-                      <option value="chart">Biểu đồ (Chia nhỏ được)</option>
-                      <option value="essay">Bài Luận (Chia nhỏ được)</option>
-                      <option value="project">Dự án (Chia nhỏ được)</option>
+                      {TASK_TYPE_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -471,11 +553,18 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                     <select
                       value={isGroup ? 'group' : 'individual'}
                       onChange={e => setIsGroup(e.target.value === 'group')}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                      disabled={isGroupOnlyType}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <option value="individual">Cá nhân</option>
                       <option value="group">Làm nhóm</option>
                     </select>
+                    {isGroup && (
+                      <p className="text-[11px] font-semibold text-indigo-700 leading-relaxed">
+                        Bài nhóm được cộng thêm {GROUP_MEETING_MINUTES} phút họp phân công và{' '}
+                        {GROUP_REHEARSAL_MINUTES} phút tập duyệt cho mỗi thành viên.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -502,6 +591,8 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                   subjectId={subjectId}
                   classId={classId}
                   taskType={type}
+                  isGroup={isGroup}
+                  promptVersion={promptVersion}
                   onStepsChange={(steps) => {
                     setEssaySteps(steps);
                     const totalMin = steps.reduce((acc, s) => acc + s.minutes, 0);
@@ -583,33 +674,90 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                               </span>
                             </div>
 
-                            {/* Difficulty distribution breakdown */}
+                            {/* Ma trận độ khó và thời gian quy đổi từng mức */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              <div className="bg-white p-2 rounded-xl border border-slate-200 text-center">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase">Nhận biết</div>
-                                <div className="text-sm font-black text-emerald-600">
-                                  {selectedPackageQuestions.filter(q => q.level === 'l1').length} câu
-                                </div>
-                              </div>
-                              <div className="bg-white p-2 rounded-xl border border-slate-200 text-center">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase">Thông hiểu</div>
-                                <div className="text-sm font-black text-blue-600">
-                                  {selectedPackageQuestions.filter(q => q.level === 'l2').length} câu
-                                </div>
-                              </div>
-                              <div className="bg-white p-2 rounded-xl border border-slate-200 text-center">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase">Vận dụng</div>
-                                <div className="text-sm font-black text-amber-600">
-                                  {selectedPackageQuestions.filter(q => q.level === 'l3').length} câu
-                                </div>
-                              </div>
-                              <div className="bg-white p-2 rounded-xl border border-slate-200 text-center">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase">Vận dụng cao</div>
-                                <div className="text-sm font-black text-rose-600">
-                                  {selectedPackageQuestions.filter(q => q.level === 'l4').length} câu
-                                </div>
-                              </div>
+                              {QUESTION_LEVELS.map(level => {
+                                const colorByLevel: Record<QuestionLevel, string> = {
+                                  l1: 'text-emerald-600',
+                                  l2: 'text-blue-600',
+                                  l3: 'text-amber-600',
+                                  l4: 'text-rose-600',
+                                };
+                                return (
+                                  <div key={level} className="bg-white p-2 rounded-xl border border-slate-200 text-center">
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase">{LEVEL_LABELS[level]}</div>
+                                    <div className={clsx('text-sm font-black', colorByLevel[level])}>
+                                      {quizDuration.countByLevel[level]} câu
+                                    </div>
+                                    <div className="text-[10px] font-bold text-slate-500 mt-0.5">
+                                      {quizDuration.minutesByLevel[level]} phút
+                                      <span className="text-slate-400 font-semibold"> ({secondsPerLevel[level]}s/câu)</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
+
+                            {/* Tổng thời gian suy từ ma trận độ khó */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-blue-200/70 text-xs">
+                              <span className="font-bold text-blue-950">
+                                Tổng theo ma trận độ khó:{' '}
+                                <strong className="font-black">
+                                  {quizDuration.totalMinutes} phút ({quizDuration.totalLU} LU)
+                                </strong>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setShowLevelRateEditor(!showLevelRateEditor)}
+                                className="text-[11px] font-extrabold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer text-left sm:text-right"
+                              >
+                                {showLevelRateEditor ? 'Ẩn định mức' : 'Chỉnh định mức giây/câu'}
+                              </button>
+                            </div>
+
+                            {showLevelRateEditor && (
+                              <div className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2.5 animate-in fade-in duration-200">
+                                <p className="text-[11px] font-semibold text-slate-500 leading-relaxed">
+                                  Định mức mặc định lấy trung bình khoảng thời gian chuẩn cho học sinh THPT.
+                                  Thầy/cô chỉnh lại nếu đề của mình nặng hoặc nhẹ hơn thông thường.
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                  {QUESTION_LEVELS.map(level => (
+                                    <div key={level} className="space-y-1">
+                                      <label className="block text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">
+                                        {LEVEL_LABELS[level]}
+                                      </label>
+                                      <div className="flex items-center gap-1">
+                                        <input
+                                          type="number"
+                                          min={5}
+                                          step={5}
+                                          value={secondsPerLevel[level]}
+                                          onWheel={e => e.currentTarget.blur()}
+                                          onChange={e => {
+                                            const val = Math.max(5, parseInt(e.target.value) || 0);
+                                            setSecondsPerLevel(prev => ({ ...prev, [level]: val }));
+                                            setMinutesManuallySet(false);
+                                          }}
+                                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-black text-blue-600 text-center focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        />
+                                        <span className="text-[10px] font-bold text-slate-400">giây</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSecondsPerLevel(DEFAULT_SECONDS_PER_LEVEL);
+                                    setMinutesManuallySet(false);
+                                  }}
+                                  className="text-[11px] font-extrabold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
+                                >
+                                  <RotateCcw className="w-3 h-3" /> Khôi phục định mức mặc định
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -619,16 +767,30 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                             <Clock className="w-4 h-4 text-blue-600" /> Thời gian làm bài dự kiến
                           </label>
                           <div className="flex items-center gap-2">
-                            <input 
-                              type="number" 
-                              value={minutes} 
-                              onChange={e => setMinutes(Math.max(5, parseInt(e.target.value) || 0))} 
-                              min={5} 
+                            <input
+                              type="number"
+                              value={minutes}
+                              onChange={e => {
+                                setMinutes(Math.max(5, parseInt(e.target.value) || 0));
+                                setMinutesManuallySet(true);
+                              }}
+                              min={5}
                               step={5}
                               onWheel={(e) => e.currentTarget.blur()}
                               className="w-24 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm font-black text-blue-600 text-center shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             />
-                            <span className="text-xs font-bold text-slate-500">phút (Giáo viên tùy chỉnh)</span>
+                            <span className="text-xs font-bold text-slate-500">
+                              {minutesManuallySet ? 'phút (thầy/cô tự đặt)' : 'phút (theo ma trận độ khó)'}
+                            </span>
+                            {minutesManuallySet && quizDuration.totalQuestions > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setMinutesManuallySet(false)}
+                                className="text-[11px] font-extrabold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer"
+                              >
+                                Tính lại theo độ khó
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -692,29 +854,75 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
       {/* Breakdown AI Section */}
       {breakdown && (
         <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xl space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-          <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-600" /> Phân Rã Bài Tập Bằng AI
-          </h3>
-          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-indigo-600" /> Phân Rã Bài Tập Bằng AI
+              </h3>
+              <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                AI đã gộp các bước liên quan vào cùng ngày và né ngày lớp đã kín tải.
+                Thầy/cô đổi trực tiếp ngày của từng bước ở cột bên phải.
+              </p>
+            </div>
+
+            {hasManualStepDates && (
+              <button
+                type="button"
+                onClick={() => {
+                  setHasManualStepDates(false);
+                  setBreakdown(planBreakdown(breakdown, false));
+                }}
+                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200 shrink-0"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                Xếp Lại Theo Gợi Ý AI
+              </button>
+            )}
+          </div>
+
           <div className="space-y-3">
-            {breakdown.map((stepItem, idx) => (
-              <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <div className="font-extrabold text-slate-900 text-xs">{stepItem.name}</div>
-                    <div className="text-[11px] font-semibold text-slate-500">
-                      {stepItem.min} phút • {stepItem.lu} LU
+            {breakdown.map((stepItem, idx) => {
+              const stepDate = stepItem.date
+                || format(addDays(new Date(startDate), stepItem.dayOffset), 'yyyy-MM-dd');
+              const prevDate = idx > 0 ? (breakdown[idx - 1].date || '') : '';
+              const isSameDayAsPrev = !!prevDate && prevDate === stepDate;
+
+              return (
+                <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-7 h-7 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-extrabold text-slate-900 text-xs">{stepItem.name}</div>
+                      <div className="text-[11px] font-semibold text-slate-500">
+                        {stepItem.min} phút • {(stepItem.lu).toFixed(1)} LU
+                        {isSameDayAsPrev && (
+                          <span className="ml-1.5 text-indigo-600 font-extrabold">• Làm chung ngày với bước {idx}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="date"
+                      value={stepDate}
+                      min={startDate}
+                      max={deadline}
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        if (!newDate) return;
+                        setHasManualStepDates(true);
+                        setBreakdown(breakdown.map((s, i) => i === idx ? { ...s, date: newDate } : s));
+                      }}
+                      className="text-xs font-extrabold text-blue-700 bg-white px-2.5 py-1.5 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    />
+                  </div>
                 </div>
-                <span className="text-xs font-extrabold text-blue-600 bg-white px-2.5 py-1 rounded-lg border border-blue-100">
-                  {format(addDays(new Date(startDate), stepItem.dayOffset), 'dd/MM/yyyy')}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <button 
@@ -731,9 +939,9 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
       <WorkloadPreviewModal
         isOpen={showWorkloadPreview}
         onClose={() => setShowWorkloadPreview(false)}
-        onConfirm={async (overrideReason) => {
+        onConfirm={async (overrideReason, severity, excessMinutes) => {
           setShowWorkloadPreview(false);
-          await handleConfirmSchedule(overrideReason);
+          await handleConfirmSchedule(overrideReason, severity, excessMinutes);
         }}
         taskData={{
           title,
@@ -849,6 +1057,8 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                     }
                     setHasConfirmedPrompt(true);
                     setShowConfirmPromptModal(false);
+                    // Kích hoạt AI phân tích ngay với đúng prompt vừa nhập
+                    setPromptVersion(v => v + 1);
                     setStep(3);
                   }}
                   className="px-5 py-2 rounded-xl font-extrabold text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all cursor-pointer"

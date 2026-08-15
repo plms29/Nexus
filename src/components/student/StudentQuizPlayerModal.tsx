@@ -27,6 +27,7 @@ interface QuestionItem {
   correct_answer: string;
   explanation?: string;
   level?: string;
+  image_url?: string | null;
 }
 
 interface StudentQuizPlayerModalProps {
@@ -65,7 +66,8 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
             options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
             correct_answer: q.correct_answer,
             explanation: q.explanation,
-            level: q.level
+            level: q.level,
+            image_url: q.image_url
           }));
           setQuestions(mapped);
         } else {
@@ -298,6 +300,15 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                           </span>
                         </div>
 
+                        {q.image_url && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={q.image_url}
+                            alt="Ảnh minh họa đề bài"
+                            className="ml-8 max-h-48 w-auto rounded-xl border border-slate-200 object-contain"
+                          />
+                        )}
+
                         <div className="space-y-1.5 pl-8 text-xs font-semibold">
                           <div className="text-slate-700">
                             Lựa chọn của em: <strong className={isCorrect ? "text-emerald-700" : "text-rose-700"}>{chosen || '(Chưa chọn)'}</strong>
@@ -364,6 +375,14 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                         <h3 className="text-base font-black text-slate-900 mt-2 leading-relaxed">
                           {currentQ.question_text}
                         </h3>
+                        {currentQ.image_url && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={currentQ.image_url}
+                            alt="Ảnh minh họa đề bài"
+                            className="mt-3 max-h-72 w-auto rounded-2xl border border-slate-200 object-contain"
+                          />
+                        )}
                       </div>
                     </div>
 

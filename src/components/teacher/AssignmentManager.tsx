@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { Task } from '@/lib/engine/types';
+import { getTaskTypeLabel } from '@/lib/engine/task-templates';
 import { 
   fetchQuestionsForTask, 
-  saveQuestionInDb, 
-  deleteQuestionFromDb, 
-  QuestionItem 
+  saveQuestionInDb,
+  deleteQuestionFromDb,
+  uploadQuestionImage,
+  QuestionItem
 } from '@/lib/api';
 import { 
   Edit3, 
@@ -23,7 +25,9 @@ import {
   Sparkles, 
   AlertTriangle,
   Layers,
-  ChevronRight
+  ChevronRight,
+  ImagePlus,
+  Loader2
 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,8 +67,12 @@ export const AssignmentManager: React.FC = () => {
   const [qCorrect, setQCorrect] = useState('A');
   const [qLevel, setQLevel] = useState<'l1' | 'l2' | 'l3' | 'l4'>('l1');
   const [qExplanation, setQExplanation] = useState('');
+  const [qImageUrl, setQImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [isSavingQuestion, setIsSavingQuestion] = useState(false);
   const [isAddingNewQuestion, setIsAddingNewQuestion] = useState(false);
+  const questionImageInputRef = React.useRef<HTMLInputElement>(null);
 
   // Filter tasks list
   const filteredTasks = tasks.filter(t => {
@@ -167,6 +175,8 @@ export const AssignmentManager: React.FC = () => {
       setQCorrect(q.correct_answer || 'A');
       setQLevel(q.level || 'l1');
       setQExplanation(q.explanation || '');
+      setQImageUrl(q.image_url || null);
+      setImageError(null);
       setIsAddingNewQuestion(false);
     } else {
       setEditingQuestion(null);
@@ -178,7 +188,27 @@ export const AssignmentManager: React.FC = () => {
       setQCorrect('A');
       setQLevel('l1');
       setQExplanation('');
+      setQImageUrl(null);
+      setImageError(null);
       setIsAddingNewQuestion(true);
+    }
+  };
+
+  // Upload ảnh minh họa cho câu hỏi lên Supabase Storage
+  const handlePickQuestionImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setImageError(null);
+    setIsUploadingImage(true);
+    const res = await uploadQuestionImage(file);
+    setIsUploadingImage(false);
+
+    if (res.success && res.url) {
+      setQImageUrl(res.url);
+    } else {
+      setImageError(res.error || 'Không tải được ảnh lên, thử lại nhé.');
     }
   };
 
@@ -195,7 +225,8 @@ export const AssignmentManager: React.FC = () => {
       options: [qOptionA, qOptionB, qOptionC, qOptionD],
       correct_answer: qCorrect,
       level: qLevel,
-      explanation: qExplanation
+      explanation: qExplanation,
+      image_url: qImageUrl
     };
 
     const res = await saveQuestionInDb(newQuestionData);
@@ -323,7 +354,7 @@ export const AssignmentManager: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span>Dạng bài:</span>
                       <strong className="text-slate-800 capitalize">
-                        {task.type === 'quiz' ? 'Trắc nghiệm' : task.type === 'essay' ? 'Bài luận' : task.type === 'project' ? 'Dự án' : task.type}
+                        {getTaskTypeLabel(task.type)}
                       </strong>
                     </div>
                     <div className="flex items-center justify-between">
@@ -631,6 +662,70 @@ export const AssignmentManager: React.FC = () => {
                       />
                     </div>
 
+                    {/* Ảnh minh họa cho đề bài */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase">
+                        Ảnh minh họa <span className="text-slate-400 font-bold normal-case">(không bắt buộc)</span>
+                      </label>
+
+                      <input
+                        ref={questionImageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePickQuestionImage}
+                        className="hidden"
+                      />
+
+                      {qImageUrl ? (
+                        <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={qImageUrl}
+                            alt="Ảnh minh họa câu hỏi"
+                            className="max-h-48 w-auto mx-auto rounded-xl object-contain"
+                          />
+                          <div className="flex items-center justify-center gap-2 pt-3">
+                            <button
+                              type="button"
+                              onClick={() => questionImageInputRef.current?.click()}
+                              disabled={isUploadingImage}
+                              className="px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                            >
+                              Đổi ảnh khác
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setQImageUrl(null)}
+                              className="px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100"
+                            >
+                              Gỡ ảnh
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => questionImageInputRef.current?.click()}
+                          disabled={isUploadingImage}
+                          className="w-full flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl border-2 border-dashed border-slate-300 bg-white text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors disabled:opacity-60"
+                        >
+                          {isUploadingImage ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <ImagePlus className="w-5 h-5" />
+                          )}
+                          <span className="text-xs font-extrabold">
+                            {isUploadingImage ? 'Đang tải ảnh lên...' : 'Tải ảnh lên cho đề bài'}
+                          </span>
+                          <span className="text-[11px] font-semibold text-slate-400">PNG, JPG, WEBP — tối đa 5MB</span>
+                        </button>
+                      )}
+
+                      {imageError && (
+                        <p className="text-[11px] font-bold text-rose-600">{imageError}</p>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="block text-[11px] font-bold text-slate-600">Đáp án A</label>
@@ -693,10 +788,10 @@ export const AssignmentManager: React.FC = () => {
                       </button>
                       <button
                         type="submit"
-                        disabled={isSavingQuestion}
-                        className="px-5 py-2 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+                        disabled={isSavingQuestion || isUploadingImage}
+                        className="px-5 py-2 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-md disabled:opacity-60"
                       >
-                        {isSavingQuestion ? 'Đang lưu...' : 'Lưu Câu Hỏi'}
+                        {isSavingQuestion ? 'Đang lưu...' : isUploadingImage ? 'Đang tải ảnh...' : 'Lưu Câu Hỏi'}
                       </button>
                     </div>
                   </motion.form>
@@ -723,8 +818,18 @@ export const AssignmentManager: React.FC = () => {
                             <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
                               {idx + 1}
                             </span>
-                            <div className="font-extrabold text-slate-900 text-sm leading-relaxed">
-                              {q.question_text}
+                            <div className="space-y-2">
+                              <div className="font-extrabold text-slate-900 text-sm leading-relaxed">
+                                {q.question_text}
+                              </div>
+                              {q.image_url && (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={q.image_url}
+                                  alt="Ảnh minh họa câu hỏi"
+                                  className="max-h-44 w-auto rounded-xl border border-slate-200 object-contain"
+                                />
+                              )}
                             </div>
                           </div>
 

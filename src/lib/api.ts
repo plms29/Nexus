@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Task, WorkmapEntry } from './engine/types';
+import { AuditLog, Task, WorkmapEntry } from './engine/types';
 import { DEFAULT_CLASS_ID, normalizeClassId } from './class-utils';
 
 export interface QuestionItem {
@@ -11,6 +11,32 @@ export interface QuestionItem {
   correct_answer: string;
   level: 'l1' | 'l2' | 'l3' | 'l4';
   explanation?: string;
+  image_url?: string | null;
+}
+
+export const QUESTION_IMAGE_BUCKET = 'question-images';
+export const MAX_QUESTION_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
+
+/** Upload ảnh minh họa cho câu hỏi lên Supabase Storage, trả về public URL */
+export async function uploadQuestionImage(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+  if (!file.type.startsWith('image/')) {
+    return { success: false, error: 'Chỉ hỗ trợ file ảnh (PNG, JPG, WEBP...).' };
+  }
+  if (file.size > MAX_QUESTION_IMAGE_BYTES) {
+    return { success: false, error: 'Ảnh vượt quá 5MB, vui lòng chọn ảnh nhỏ hơn.' };
+  }
+
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const path = `questions/${crypto.randomUUID()}.${ext || 'png'}`;
+
+  const { error } = await supabase.storage
+    .from(QUESTION_IMAGE_BUCKET)
+    .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+
+  if (error) return { success: false, error: error.message };
+
+  const { data } = supabase.storage.from(QUESTION_IMAGE_BUCKET).getPublicUrl(path);
+  return { success: true, url: data.publicUrl };
 }
 
 export interface QuestionPackage {
@@ -330,6 +356,7 @@ export async function saveQuestionInDb(question: QuestionItem) {
         correct_answer: question.correct_answer,
         level: question.level,
         explanation: question.explanation,
+        image_url: question.image_url ?? null,
       })
       .eq('id', question.id)
       .select()
@@ -348,6 +375,7 @@ export async function saveQuestionInDb(question: QuestionItem) {
         correct_answer: question.correct_answer,
         level: question.level,
         explanation: question.explanation,
+        image_url: question.image_url ?? null,
       })
       .select()
       .single();
@@ -365,6 +393,63 @@ export async function deleteQuestionFromDb(questionId: string) {
 
   if (error) return { success: false, error };
   return { success: true };
+}
+
+/* Audit Log API — nhật ký ghi đè cảnh báo quá tải */
+
+export async function saveAuditLog(log: Omit<AuditLog, 'id' | 'timestamp'>) {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from('audit_logs')
+    .insert({
+      task_id: log.task_id,
+      task_title: log.task_title,
+      teacher_id: user?.id ?? null,
+      teacher_name: log.teacher_name || user?.user_metadata?.name || null,
+      class_id: normalizeClassId(log.class_id) || null,
+      subject_id: log.subject_id || null,
+      reason: log.reason,
+      severity: log.severity,
+      excess_minutes: log.excess_minutes ?? null,
+      deadline: log.deadline || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error saving audit log:', error.message);
+    return { success: false, error };
+  }
+  return { success: true, data };
+}
+
+export async function fetchAuditLogs(classId?: string): Promise<AuditLog[]> {
+  let query = supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+
+  const normalizedClassId = normalizeClassId(classId);
+  if (normalizedClassId) query = query.eq('class_id', normalizedClassId);
+
+  const { data, error } = await query;
+  if (error) {
+    console.warn('Error fetching audit logs:', error.message);
+    return [];
+  }
+
+  return (data || []).map((d: any) => ({
+    id: d.id,
+    timestamp: d.created_at,
+    task_id: d.task_id,
+    task_title: d.task_title,
+    teacher_id: d.teacher_id,
+    teacher_name: d.teacher_name,
+    class_id: d.class_id,
+    subject_id: d.subject_id,
+    reason: d.reason,
+    severity: d.severity,
+    excess_minutes: d.excess_minutes != null ? Number(d.excess_minutes) : undefined,
+    deadline: d.deadline,
+  }));
 }
 
 /* Question Packages API */

@@ -57,6 +57,12 @@ export interface AuditLog {
   task_id: string;
   task_title?: string;
   teacher_id?: string;
+  teacher_name?: string;
+  class_id?: string;
+  subject_id?: string;
   reason: string;
   severity: 'critical' | 'soft';
+  /** Số phút vượt ngưỡng 5 LU/ngày tại thời điểm ghi đè */
+  excess_minutes?: number;
+  deadline?: string;
 }

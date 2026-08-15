@@ -18,6 +18,12 @@ import {
 import clsx from 'clsx';
 
 import { TaskType } from '@/lib/engine/types';
+import {
+  getTaskTypeLabel,
+  getTemplateSteps,
+  GROUP_MEETING_MINUTES,
+  GROUP_REHEARSAL_MINUTES,
+} from '@/lib/engine/task-templates';
 
 export interface ProcessStepItem {
   id: string;
@@ -37,6 +43,12 @@ interface EssaySetupProps {
   subjectId?: string;
   classId?: string;
   taskType?: TaskType;
+  isGroup?: boolean;
+  /**
+   * Tăng lên mỗi lần giáo viên bấm xác nhận đề bài ở modal prompt.
+   * AI chỉ chạy khi đã có prompt chi tiết, tránh sinh ra các bước chung chung.
+   */
+  promptVersion?: number;
   onStepsChange?: (steps: ProcessStepItem[]) => void;
   onOutlineChange?: (outline: OutlineItem[], isApproved: boolean) => void;
 }
@@ -101,37 +113,81 @@ const detectLanguageFromSubject = (sub: string = ''): 'english' | 'vietnamese' =
   return 'vietnamese';
 };
 
-const getInitialSteps = (type?: TaskType): ProcessStepItem[] => {
-  if (type === 'chart') {
-    return [
-      { id: 'p1', stepName: 'Bước 1: Đọc hiểu số liệu và xác định mục tiêu biểu đồ', minutes: 15, note: 'Nắm rõ bộ số liệu và các chỉ số cần thể hiện' },
-      { id: 'p2', stepName: 'Bước 2: Xử lý, tính toán số liệu và phân loại dữ liệu', minutes: 20, note: 'Tính toán tỷ lệ %, xử lý chênh lệch số liệu' },
-      { id: 'p3', stepName: 'Bước 3: Lựa chọn dạng biểu đồ thích hợp và dựng khung/trục', minutes: 15, note: 'Xác định dạng cột, đường, tròn hoặc kết hợp' },
-      { id: 'p4', stepName: 'Bước 4: Vẽ biểu đồ chi tiết và điền chú giải', minutes: 30, note: 'Vẽ chính xác tỷ lệ, điền đầy đủ chú giải và đơn vị' },
-      { id: 'p5', stepName: 'Bước 5: Nhận xét, phân tích xu hướng và rút ra kết luận', minutes: 25, note: 'Phân tích điểm nổi bật, nhận xét khái quát & chi tiết' },
-      { id: 'p6', stepName: 'Bước 6: Rà soát, kiểm tra độ chính xác và hoàn thiện', minutes: 10, note: 'Kiểm tra khớp số liệu và tên biểu đồ' },
-    ];
-  }
-  if (type === 'project') {
-    return [
-      { id: 'p1', stepName: 'Bước 1: Lên kế hoạch dự án và phân công mục tiêu', minutes: 30, note: 'Xác định phạm vi, vai trò thành viên và mốc hoàn thành' },
-      { id: 'p2', stepName: 'Bước 2: Thu thập dữ liệu và tài liệu nghiên cứu', minutes: 60, note: 'Khảo sát, thu thập thông tin và tổng hợp tư liệu' },
-      { id: 'p3', stepName: 'Bước 3: Thực hiện và tổng hợp sản phẩm dự án', minutes: 90, note: 'Xây dựng nội dung, mô hình hoặc bài báo cáo' },
-      { id: 'p4', stepName: 'Bước 4: Đánh giá, hoàn thiện và chuẩn bị báo cáo/thuyết trình', minutes: 30, note: 'Tổng duyệt sản phẩm và tập luyện thuyết trình' },
-    ];
-  }
+/**
+ * Bỏ phần "(10 phút)" AI hay chèn vào tên bước.
+ * Số phút đã có ô riêng bên cạnh, để cả hai nơi thì giáo viên phải sửa hai lần.
+ */
+const stripMinutesFromName = (name: string): string =>
+  (name || '')
+    .replace(/[\(\[]\s*(khoảng\s*|~\s*)?\d+\s*(-\s*\d+\s*)?(phút|phut|p|min|mins|minutes)\s*[\)\]]/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([:.,;])/g, '$1')
+    .trim();
+
+/**
+ * Bước mặc định lấy từ bộ mẫu dùng chung của engine, nên mọi dạng bài
+ * (kể cả sơ đồ tư duy và thuyết trình) đều có tiến trình đúng khi AI chưa chạy hoặc lỗi.
+ */
+const getInitialSteps = (type?: TaskType, isGroup = false): ProcessStepItem[] =>
+  getTemplateSteps(type ?? 'essay', isGroup).map((s, i) => ({
+    id: `p${i + 1}`,
+    stepName: `Bước ${i + 1}: ${s.name}`,
+    minutes: s.min,
+    note: '',
+  }));
+
+/**
+ * Bài nhóm luôn phải có phần điều phối: họp phân công đầu tiên và tập duyệt cuối cùng.
+ * AI có thể quên hai bước này nên bổ sung lại nếu thiếu.
+ */
+const withGroupCoordination = (steps: ProcessStepItem[], isGroup: boolean): ProcessStepItem[] => {
+  if (!isGroup) return steps;
+
+  const hasMeeting = steps.some(s => /họp nhóm|phân công/i.test(s.stepName));
+  const hasRehearsal = steps.some(s => /tập duyệt|tổng duyệt/i.test(s.stepName));
+
   return [
-    { id: 'p1', stepName: 'Bước 1: Đọc hiểu đề và xác định phạm vi nội dung', minutes: 15, note: 'Đọc kỹ đề bài để nắm vững yêu cầu' },
-    { id: 'p2', stepName: 'Bước 2: Tra cứu thông tin và kiểm tra lại tính xác thực', minutes: 20, note: 'Tìm kiếm tài liệu & nguồn uy tín' },
-    { id: 'p3', stepName: 'Bước 3: Xác định từ khóa/ý chính và luận điểm', minutes: 10, note: 'Liệt kê các từ khóa chính và luận điểm cốt lõi' },
-    { id: 'p4', stepName: 'Bước 4: Lập dàn ý chi tiết', minutes: 10, note: 'Xây dựng dàn ý chi tiết theo cấu trúc Mở - Thân - Kết' },
-    { id: 'p5', stepName: 'Bước 5: Viết essay', minutes: 45, note: 'Bắt đầu viết bài dựa trên dàn ý đã lập' },
-    { id: 'p6', stepName: 'Bước 6: Đọc lại bài, chỉnh sửa, kiểm tra lỗi và hoàn thiện', minutes: 10, note: 'Đọc lại toàn bộ bài viết để kiểm tra chính tả & diễn đạt' },
-    { id: 'p7', stepName: 'Bước 7: Tổng hợp lại các tài liệu tham khảo (Trình bày gọn gàng)', minutes: 5, note: 'Liệt kê các nguồn thông tin đã sử dụng' },
+    ...(hasMeeting ? [] : [{
+      id: 'group-meeting',
+      stepName: 'Họp nhóm phân chia công việc và rà soát',
+      minutes: GROUP_MEETING_MINUTES,
+      note: 'Thống nhất nội dung, phân vai và mốc thời gian',
+    }]),
+    ...steps,
+    ...(hasRehearsal ? [] : [{
+      id: 'group-rehearsal',
+      stepName: 'Tập duyệt trình bày sản phẩm cùng nhóm',
+      minutes: GROUP_REHEARSAL_MINUTES,
+      note: 'Ghép phần các thành viên, xử lý chuyển tiếp',
+    }]),
   ];
 };
 
 const getInitialOutline = (type?: TaskType): OutlineItem[] => {
+  if (type === 'mindmap_short' || type === 'mindmap_long') {
+    return [
+      { id: 'o1', text: '1. Chủ đề trung tâm của sơ đồ' },
+      { id: 'o2', text: '2. Các nhánh chính (mỗi nhánh là một đơn vị kiến thức lớn)' },
+      { id: 'o3', text: '3. Nhánh phụ và từ khoá cho từng nhánh chính' },
+      { id: 'o4', text: '4. Ví dụ hoặc công thức minh hoạ gắn với từng nhánh' },
+      ...(type === 'mindmap_long'
+        ? [{ id: 'o5', text: '5. Liên kết ngang giữa các nhánh, chỉ ra mối quan hệ kiến thức' }]
+        : []),
+    ];
+  }
+  if (type === 'presentation_individual' || type === 'presentation_group') {
+    return [
+      { id: 'o1', text: '1. Mở đầu: Giới thiệu chủ đề và thông điệp chính' },
+      { id: 'o2', text: '2. Bối cảnh và lý do chủ đề này đáng quan tâm' },
+      { id: 'o3', text: '3. Nội dung trọng tâm 1 kèm dẫn chứng cụ thể' },
+      { id: 'o4', text: '4. Nội dung trọng tâm 2 kèm số liệu hoặc ví dụ' },
+      { id: 'o5', text: '5. Liên hệ thực tế với bản thân và lớp học' },
+      { id: 'o6', text: '6. Kết luận và câu hỏi thảo luận cho người nghe' },
+      ...(type === 'presentation_group'
+        ? [{ id: 'o7', text: '7. Bảng phân công: ai trình bày phần nào, thời lượng bao lâu' }]
+        : []),
+    ];
+  }
   if (type === 'chart') {
     return [
       { id: 'o1', text: '1. Tên biểu đồ & Tóm tắt mục tiêu thể hiện số liệu' },
@@ -167,6 +223,8 @@ export default function EssaySetup({
   subjectId = 'Ngữ văn',
   classId = '10A',
   taskType = 'essay',
+  isGroup = false,
+  promptVersion = 0,
   onStepsChange,
   onOutlineChange
 }: EssaySetupProps) {
@@ -185,17 +243,17 @@ export default function EssaySetup({
   const [languageNotes, setLanguageNotes] = useState<string>('');
 
   // Process Steps State
-  const [processSteps, setProcessSteps] = useState<ProcessStepItem[]>(() => getInitialSteps(taskType));
+  const [processSteps, setProcessSteps] = useState<ProcessStepItem[]>(() => getInitialSteps(taskType, isGroup));
 
   // Outline State
   const [outline, setOutline] = useState<OutlineItem[]>(() => getInitialOutline(taskType));
 
   // Update initial steps & outline when taskType changes
   useEffect(() => {
-    setProcessSteps(getInitialSteps(taskType));
+    setProcessSteps(getInitialSteps(taskType, isGroup));
     setOutline(getInitialOutline(taskType));
     setHasGeneratedOnce(false);
-  }, [taskType]);
+  }, [taskType, isGroup]);
   const [newOutlineText, setNewOutlineText] = useState('');
   const [isOutlineApproved, setIsOutlineApproved] = useState<boolean>(true);
 
@@ -207,6 +265,9 @@ export default function EssaySetup({
   useEffect(() => {
     onOutlineChange?.(outline, isOutlineApproved);
   }, [outline, isOutlineApproved]);
+
+  // Tổng thời gian khung chuẩn của dạng bài hiện tại, hiển thị trên nút đặt lại
+  const standardTotalMinutes = getTemplateSteps(taskType, isGroup).reduce((sum, s) => sum + s.min, 0);
 
   const totalMinutes = processSteps.reduce((acc, curr) => acc + (curr.minutes || 0), 0);
   const totalHours = Math.floor(totalMinutes / 60);
@@ -233,7 +294,13 @@ export default function EssaySetup({
       });
       const data = await res.json();
       if (data.success) {
-        if (data.steps && data.steps.length > 0) setProcessSteps(data.steps);
+        if (data.steps && data.steps.length > 0) {
+          const cleanedSteps = data.steps.map((s: ProcessStepItem) => ({
+            ...s,
+            stepName: stripMinutesFromName(s.stepName),
+          }));
+          setProcessSteps(withGroupCoordination(cleanedSteps, isGroup));
+        }
         if (data.outline && data.outline.length > 0) setOutline(data.outline);
         if (data.languageNotes) setLanguageNotes(data.languageNotes);
       }
@@ -245,12 +312,13 @@ export default function EssaySetup({
     }
   };
 
-  // Auto-trigger Gemini AI Analysis ONLY ONCE when title is present and not generated yet
+  // Chỉ gọi AI sau khi giáo viên đã xác nhận đề bài + prompt chi tiết,
+  // nhờ vậy các bước sinh ra bám sát nội dung thay vì chung chung.
   useEffect(() => {
-    if (title && title.trim() && !hasGeneratedOnce) {
+    if (promptVersion > 0 && title && title.trim()) {
       handleAnalyzeWithGemini();
     }
-  }, [title, hasGeneratedOnce]);
+  }, [promptVersion]);
 
   const addProcessStep = () => {
     setProcessSteps([
@@ -281,16 +349,9 @@ export default function EssaySetup({
     setOutline(outline.filter(o => o.id !== id));
   };
 
+  // Đặt lại về khung chuẩn của đúng dạng bài đang chọn, không phải khung essay cố định
   const resetToStandardSteps = () => {
-    setProcessSteps([
-      { id: 'p1', stepName: 'Bước 1: Đọc hiểu đề và xác định phạm vi nội dung', minutes: 15, note: 'Đọc kỹ đề bài để nắm vững yêu cầu' },
-      { id: 'p2', stepName: 'Bước 2: Tra cứu thông tin và kiểm tra lại tính xác thực', minutes: 20, note: 'Tìm kiếm tài liệu & nguồn uy tín' },
-      { id: 'p3', stepName: 'Bước 3: Xác định từ khóa/ý chính và luận điểm', minutes: 10, note: 'Liệt kê các từ khóa chính và luận điểm cốt lõi' },
-      { id: 'p4', stepName: 'Bước 4: Lập dàn ý', minutes: 10, note: 'Xây dựng dàn ý chi tiết theo cấu trúc Mở - Thân - Kết' },
-      { id: 'p5', stepName: 'Bước 5: Viết essay', minutes: 45, note: 'Bắt đầu viết bài dựa trên dàn ý đã lập' },
-      { id: 'p6', stepName: 'Bước 6: Đọc lại bài, chỉnh sửa, kiểm tra lỗi và hoàn thiện', minutes: 10, note: 'Đọc lại toàn bộ bài viết để kiểm tra chính tả & diễn đạt' },
-      { id: 'p7', stepName: 'Bước 7: Tổng hợp lại các tài liệu tham khảo (Trình bày gọn gàng)', minutes: 5, note: 'Liệt kê các nguồn thông tin đã sử dụng' },
-    ]);
+    setProcessSteps(getInitialSteps(taskType, isGroup));
   };
 
   return (
@@ -353,7 +414,7 @@ export default function EssaySetup({
               <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60">
                 <Clock className="w-4 h-4" />
               </div>
-              Phân Bổ Tiến Trình {taskType === 'chart' ? 'Vẽ Biểu Đồ' : taskType === 'project' ? 'Thực Hiện Dự Án' : 'Viết Essay'} (Chia Nhiều Ngày)
+              Phân Bổ Tiến Trình: {getTaskTypeLabel(taskType as TaskType)}
             </h3>
             <p className="text-slate-500 text-xs font-semibold mt-1">
               Định hình các bước thực hiện, thời gian hoàn thành lý tưởng và lưu ý giúp học sinh làm bài độc lập không lo tràn LU.
@@ -375,10 +436,10 @@ export default function EssaySetup({
               type="button"
               onClick={resetToStandardSteps}
               className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
-              title="Đặt lại về khung thời gian 115 phút chuẩn"
+              title={`Đặt lại về khung thời gian chuẩn ${standardTotalMinutes} phút của dạng bài này`}
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-              Khung 115p Chuẩn
+              Khung {standardTotalMinutes}p Chuẩn
             </button>
 
             <div className="bg-indigo-50/80 border border-indigo-100 px-4 py-2 rounded-2xl flex items-center gap-2.5 whitespace-nowrap shadow-sm">

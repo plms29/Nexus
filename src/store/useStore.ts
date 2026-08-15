@@ -5,9 +5,12 @@ import { checkDailyOverload } from '../lib/engine/detector';
 import type { OverloadResult } from '../lib/engine/detector';
 import { decideIntervention } from '../lib/engine/intervention';
 import type { InterventionDecision } from '../lib/engine/intervention';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { fetchTasks, fetchWorkmap, saveScheduledTask, updateTaskInDb, deleteTaskFromDb } from '../lib/api';
 import { DEFAULT_CLASS_ID, normalizeClassId, normalizeClassList, resolveStudentClassId } from '../lib/class-utils';
+import { getSubjectGroup } from '../lib/engine/subject-group';
+import { checkLateAssignment } from '../lib/engine/late-assignment';
+import { planStepDates, buildExistingMinutesByDate, buildDateRange } from '../lib/engine/step-scheduler';
 
 interface User {
   username: string;
@@ -60,7 +63,7 @@ interface AppState {
   setActiveTab: (tab: 'workmap' | 'assignments' | 'audit_logs') => void;
   clearAlert: () => void;
   loadData: (classId?: string) => Promise<void>;
-  autoScheduleTask: (task: Task, startDate: string, deadline: string, totalMinutes: number, steps?: {name: string, lu: number, min: number, dayOffset: number}[]) => Promise<void>;
+  autoScheduleTask: (task: Task, startDate: string, deadline: string, totalMinutes: number, steps?: {name: string, lu: number, min: number, dayOffset: number, date?: string}[]) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -227,16 +230,16 @@ export const useStore = create<AppState>((set, get) => ({
     set({ tasks: tasks || [], workmap: workmap || [] });
   },
   
-  autoScheduleTask: async (task: Task, startDate: string, deadline: string, totalMinutes: number, steps?: {name: string, lu: number, min: number, dayOffset: number}[]) => {
+  autoScheduleTask: async (task: Task, startDate: string, deadline: string, totalMinutes: number, steps?: {name: string, lu: number, min: number, dayOffset: number, date?: string}[]) => {
     const workmap = get().workmap;
-    
-    const dates = [];
-    let curr = new Date(startDate);
-    const end = new Date(deadline);
-    while (curr <= end) {
-      dates.push(format(curr, 'yyyy-MM-dd'));
-      curr = addDays(curr, 1);
-    }
+    const subjectGroup = getSubjectGroup(task.subject_id);
+
+    // Giao bài sau 19:00 thì hôm nay không còn là ngày làm bài hợp lệ
+    const { earliestWorkDate } = checkLateAssignment(startDate, deadline);
+    const effectiveStart = startDate > earliestWorkDate ? startDate : earliestWorkDate;
+
+    // Hạn nộp quá gấp thì buildDateRange vẫn trả về ít nhất một ngày để xếp việc
+    const dates = buildDateRange(effectiveStart, deadline);
     
     if (!steps) {
       let scheduledDate = null;
@@ -251,7 +254,7 @@ export const useStore = create<AppState>((set, get) => ({
       if (scheduledDate) {
         const entry = {
           date: scheduledDate,
-          subject_group: 'natural' as const,
+          subject_group: subjectGroup,
           minutes: totalMinutes,
           lu: totalMinutes / 30,
           task_id: task.id
@@ -272,41 +275,32 @@ export const useStore = create<AppState>((set, get) => ({
       }
     } 
     else {
-      const scheduledEntries: WorkmapEntry[] = [];
-      let stepIdx = 0;
-      for (const d of dates) {
-        if (stepIdx >= steps.length) break;
-        let availableMinutes = 150 - checkDailyOverload(d, workmap, 0).totalLU * 30;
-        
-        while (stepIdx < steps.length && availableMinutes >= steps[stepIdx].min) {
-          const step = steps[stepIdx];
-          scheduledEntries.push({
-            date: d,
-            subject_group: 'natural' as const,
-            minutes: step.min,
-            lu: step.lu,
-            task_id: task.id,
-            step_name: step.name
-          });
-          availableMinutes -= step.min;
-          stepIdx++;
-        }
-      }
-      
-      if (stepIdx === steps.length) {
-        const res = await saveScheduledTask(task, scheduledEntries);
-        if (res.success) {
-          get().addTask(task);
-          scheduledEntries.forEach(entry => get().addWorkmapEntry(entry));
-          set({ overloadAlert: null, interventionProposal: null });
-        } else {
-          alert('Supabase Error: ' + (res.error?.message || 'Unknown error'));
-        }
+      // Giữ đúng ngày đã chốt cho từng bước ở màn xem trước (AI xếp hoặc giáo viên
+      // chỉnh tay). Chỉ bước nào chưa có ngày hợp lệ mới được xếp lại, nên lịch
+      // lưu xuống DB trùng khớp với những gì giáo viên vừa duyệt.
+      const existingMinutesByDate = buildExistingMinutesByDate(
+        workmap,
+        get().tasks,
+        t => !t || normalizeClassId(t.class_id) === normalizeClassId(task.class_id)
+      );
+      const plannedDates = planStepDates(steps, dates, existingMinutesByDate);
+
+      const scheduledEntries: WorkmapEntry[] = steps.map((step, i) => ({
+        date: plannedDates[i] || dates[dates.length - 1],
+        subject_group: subjectGroup,
+        minutes: step.min,
+        lu: step.lu,
+        task_id: task.id,
+        step_name: step.name
+      }));
+
+      const res = await saveScheduledTask(task, scheduledEntries);
+      if (res.success) {
+        get().addTask(task);
+        scheduledEntries.forEach(entry => get().addWorkmapEntry(entry));
+        set({ overloadAlert: null, interventionProposal: null });
       } else {
-        const overloadResult = checkDailyOverload(deadline, workmap, totalMinutes);
-        const intervention = decideIntervention(task, true);
-        const current_lu = overloadResult.totalLU - (totalMinutes / 30);
-        set({ overloadAlert: { ...overloadResult, task, new_minutes: totalMinutes, current_lu, date: deadline }, interventionProposal: intervention });
+        alert('Supabase Error: ' + (res.error?.message || 'Unknown error'));
       }
     }
   }
