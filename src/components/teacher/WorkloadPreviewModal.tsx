@@ -276,14 +276,18 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
     [isOpen, taskData.startDate, taskData.deadline]
   );
 
-  // Phải nhập lý do khi quá tải ngày, hoặc khi giao gấp sau 19:00 mà không còn ngày làm bài
-  const requiresOverride = hasAnyCritical || !!lateCheck?.isDeadlineTooTight;
+  // Vượt quỹ LU tuần của một nhóm môn (70/30) cũng là vi phạm phải trình bày với nhà trường
+  const exceedsGroupQuota = !!weeklyQuota?.requiresOverride;
+
+  // Phải nhập lý do khi quá tải ngày, vượt quỹ nhóm môn tuần,
+  // hoặc khi giao gấp sau 19:00 mà không còn ngày làm bài
+  const requiresOverride = hasAnyCritical || exceedsGroupQuota || !!lateCheck?.isDeadlineTooTight;
 
   // Số phút vượt ngưỡng 5 LU/ngày ở ngày nặng nhất, dùng để phân mức nghiêm trọng trong audit log
   const excessMinutes = Math.max(0, Math.round(maxDayLU * 30 - MAX_LU_PER_DAY * 30));
   // Theo tài liệu: vượt trên 30 phút thì phải trình bày lý do cho nhà trường
   const overrideSeverity: 'critical' | 'soft' =
-    excessMinutes > 30 || lateCheck?.isDeadlineTooTight ? 'critical' : 'soft';
+    excessMinutes > 30 || exceedsGroupQuota || lateCheck?.isDeadlineTooTight ? 'critical' : 'soft';
 
   const isDecomposable = isDecomposableType(taskData.type);
   const suggestedNewDeadlineObj = useMemo(() => {
@@ -469,9 +473,11 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
             {weeklyQuota && weeklyQuota.totalLU > 0 && (
               <div className={clsx(
                 "rounded-2xl p-4 border shadow-sm space-y-3",
-                weeklyQuota.isValid
-                  ? "bg-white border-slate-200/90"
-                  : "bg-amber-50/70 border-amber-200"
+                weeklyQuota.status === 'quota_exceeded'
+                  ? "bg-rose-50/70 border-rose-200"
+                  : weeklyQuota.status === 'ratio_deviation'
+                    ? "bg-amber-50/70 border-amber-200"
+                    : "bg-white border-slate-200/90"
               )}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -484,16 +490,27 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                       <strong className="text-slate-700">
                         {weeklyQuota.orientation === 'natural' ? 'tự nhiên' : 'xã hội'}
                       </strong>
-                      {' '}— chuẩn 70% cho nhóm môn chính, 30% cho nhóm còn lại.
+                      {' '}— quỹ tuần {weeklyQuota.primaryQuotaLU.toFixed(1)} LU cho nhóm môn chính,{' '}
+                      {weeklyQuota.secondaryQuotaLU.toFixed(1)} LU cho nhóm còn lại.
                     </p>
                   </div>
                   <span className={clsx(
                     "text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shrink-0",
-                    weeklyQuota.isValid
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-amber-100 text-amber-800 border-amber-300"
+                    weeklyQuota.status === 'quota_exceeded'
+                      ? "bg-rose-100 text-rose-800 border-rose-300"
+                      : weeklyQuota.status === 'ratio_deviation'
+                        ? "bg-amber-100 text-amber-800 border-amber-300"
+                        : weeklyQuota.status === 'balanced'
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-slate-100 text-slate-600 border-slate-200"
                   )}>
-                    {weeklyQuota.isValid ? 'Cân đối' : 'Lệch tỷ lệ'}
+                    {weeklyQuota.status === 'quota_exceeded'
+                      ? 'Vượt quỹ nhóm môn'
+                      : weeklyQuota.status === 'ratio_deviation'
+                        ? 'Lệch tỷ lệ'
+                        : weeklyQuota.status === 'balanced'
+                          ? 'Cân đối'
+                          : 'Tuần còn nhẹ'}
                   </span>
                 </div>
 
@@ -522,10 +539,64 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                   </div>
                 </div>
 
+                {/* Mức tiêu thụ tuyệt đối so với quỹ LU tuần của từng nhóm môn */}
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold">
+                  {([
+                    {
+                      label: weeklyQuota.orientation === 'natural' ? 'Tự nhiên (nhóm chính)' : 'Xã hội (nhóm chính)',
+                      used: weeklyQuota.primaryLU,
+                      quota: weeklyQuota.primaryQuotaLU,
+                    },
+                    {
+                      label: weeklyQuota.orientation === 'natural' ? 'Xã hội (nhóm phụ)' : 'Tự nhiên (nhóm phụ)',
+                      used: weeklyQuota.secondaryLU,
+                      quota: weeklyQuota.secondaryQuotaLU,
+                    },
+                  ]).map((g) => {
+                    const over = g.used > g.quota;
+                    return (
+                      <div
+                        key={g.label}
+                        className={clsx(
+                          "rounded-xl border px-3 py-2 space-y-1",
+                          over ? "bg-rose-50 border-rose-200" : "bg-slate-50 border-slate-200"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-slate-500">{g.label}</span>
+                          <span className={over ? "text-rose-700" : "text-slate-700"}>
+                            {g.used.toFixed(1)} / {g.quota.toFixed(1)} LU
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
+                          <div
+                            className={clsx("h-full rounded-full transition-all duration-500", over ? "bg-rose-500" : "bg-emerald-500")}
+                            style={{ width: `${Math.min(100, (g.used / g.quota) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
                 {weeklyQuota.reason && (
-                  <div className="flex items-start gap-2 text-[11px] font-semibold text-amber-900 bg-amber-100/70 border border-amber-200 rounded-xl p-2.5">
+                  <div className={clsx(
+                    "flex items-start gap-2 text-[11px] font-semibold rounded-xl p-2.5 border",
+                    weeklyQuota.status === 'quota_exceeded'
+                      ? "text-rose-900 bg-rose-100/70 border-rose-200"
+                      : weeklyQuota.status === 'ratio_deviation'
+                        ? "text-amber-900 bg-amber-100/70 border-amber-200"
+                        : "text-slate-600 bg-slate-50 border-slate-200"
+                  )}>
                     <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    <span>{weeklyQuota.reason}</span>
+                    <span>
+                      {weeklyQuota.reason}
+                      {weeklyQuota.status === 'quota_exceeded' && (
+                        <strong className="block mt-1 text-rose-900">
+                          Vẫn giao được nhưng bắt buộc ghi lý do ghi đè và lưu audit log gửi nhà trường.
+                        </strong>
+                      )}
+                    </span>
                   </div>
                 )}
               </div>
@@ -824,9 +895,13 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                     Ghi Đè Cảnh Báo & Lưu Audit Log
                   </h3>
                   <p className="text-xs text-slate-500 font-semibold">
-                    {lateCheck?.isDeadlineTooTight && !hasAnyCritical
-                      ? `Xác nhận giao bài dù đã quá ${LATE_ASSIGNMENT_HOUR}:00 và học sinh không còn ngày trọn vẹn để làm.`
-                      : 'Xác nhận giao bài dù tải công việc vượt 5.0 LU/ngày.'}
+                    {hasAnyCritical
+                      ? 'Xác nhận giao bài dù tải công việc vượt 5.0 LU/ngày.'
+                      : lateCheck?.isDeadlineTooTight
+                        ? `Xác nhận giao bài dù đã quá ${LATE_ASSIGNMENT_HOUR}:00 và học sinh không còn ngày trọn vẹn để làm.`
+                        : exceedsGroupQuota
+                          ? `Xác nhận giao bài dù nhóm môn ${weeklyQuota?.overloadedGroup === 'natural' ? 'tự nhiên' : 'xã hội'} đã dùng vượt quỹ LU tuần theo tỷ lệ 70/30.`
+                          : 'Xác nhận giao bài dù có cảnh báo từ hệ thống.'}
                   </p>
                 </div>
               </div>
@@ -838,6 +913,9 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                 {[
                   ...(lateCheck?.isDeadlineTooTight
                     ? [`Giao gấp sau ${LATE_ASSIGNMENT_HOUR}:00 do yêu cầu đột xuất của nhà trường`]
+                    : []),
+                  ...(exceedsGroupQuota
+                    ? [`Vượt quỹ LU tuần của nhóm môn ${weeklyQuota?.overloadedGroup === 'natural' ? 'tự nhiên' : 'xã hội'} do lịch kiểm tra tập trung của tổ bộ môn`]
                     : []),
                   'Bài kiểm tra trọng tâm bắt buộc theo kế hoạch bộ môn',
                   'Lớp học đã được chuẩn bị bài trước từ tuần trước',
@@ -887,9 +965,14 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const finalReason = selectedReasonOption.includes('Khác')
+                    const chosenReason = selectedReasonOption.includes('Khác')
                       ? (customReasonText || 'Ghi đè cảnh báo quá tải')
                       : selectedReasonOption;
+                    // Ghép thêm mô tả vi phạm quỹ tuần để nhà trường đọc audit log
+                    // biết chính xác đã vượt cái gì, không chỉ có lý do của giáo viên
+                    const finalReason = exceedsGroupQuota && weeklyQuota?.reason
+                      ? `${chosenReason} — ${weeklyQuota.reason}`
+                      : chosenReason;
                     setShowOverrideModal(false);
                     onConfirm(finalReason, overrideSeverity, excessMinutes);
                   }}
