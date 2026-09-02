@@ -1,9 +1,11 @@
 'use client';
+import { useTranslate } from '@/lib/i18n';
 import React, { useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { AlertTriangle, CheckCircle2, XCircle, ArrowRight, ShieldAlert } from 'lucide-react';
 
 export const InterventionModal = () => {
+  const tr = useTranslate();
   const { overloadAlert, interventionProposal, clearAlert, addWorkmapEntry, addTask, addAuditLog } = useStore();
   const [overrideReason, setOverrideReason] = useState('');
 
@@ -50,9 +52,9 @@ export const InterventionModal = () => {
             <ShieldAlert className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="text-xl font-black text-destructive tracking-tight">Phát Hiện Quá Tải</h3>
+            <h3 className="text-xl font-black text-destructive tracking-tight">{tr("Phát Hiện Quá Tải")}</h3>
             <p className="text-sm font-semibold mt-1 text-destructive/80">
-              Thêm bài tập này sẽ dẫn đến <span className="font-bold">{overloadAlert.current_lu + overloadAlert.new_minutes / 30} LU</span> vào ngày {overloadAlert.date}.
+              {tr("Thêm bài tập này sẽ dẫn đến")} <span className="font-bold">{overloadAlert.current_lu + overloadAlert.new_minutes / 30} LU</span> {tr("vào ngày")} {overloadAlert.date}.
             </p>
           </div>
         </div>
@@ -60,10 +62,10 @@ export const InterventionModal = () => {
         <div className="p-6 space-y-6">
           <div className="bg-white/50 backdrop-blur rounded-2xl p-5 border border-white/60 shadow-sm">
             <h4 className="font-bold text-foreground/80 mb-2 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-primary" /> Đề xuất từ AI
+              <CheckCircle2 className="w-5 h-5 text-primary" /> {tr("Đề xuất từ AI")}
             </h4>
             <p className="text-sm font-medium text-foreground/70">
-              Chiến lược: <span className="font-bold text-primary">{interventionProposal.strategy}</span>
+              {tr("Chiến lược:")} <span className="font-bold text-primary">{interventionProposal.strategy}</span>
             </p>
             {interventionProposal.suggestions && (
               <div className="mt-3 flex gap-2 flex-wrap">
@@ -78,11 +80,11 @@ export const InterventionModal = () => {
 
           <div className="space-y-3">
             <label className="text-sm font-bold text-foreground/60 uppercase tracking-wider flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" /> Lý do ép buộc giao (Override)
+              <AlertTriangle className="w-4 h-4" /> {tr("Lý do ép buộc giao (Override)")}
             </label>
             <textarea
               className="w-full border-0 bg-black/5 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-destructive/50 focus:outline-none transition-shadow shadow-inner resize-none h-24 placeholder:text-foreground/30"
-              placeholder="Tại sao bắt buộc phải giao vào ngày này dù đã quá tải?"
+              placeholder={tr("Tại sao bắt buộc phải giao vào ngày này dù đã quá tải?")}
               value={overrideReason}
               onChange={e => setOverrideReason(e.target.value)}
             />
@@ -94,19 +96,19 @@ export const InterventionModal = () => {
             onClick={clearAlert}
             className="px-5 py-2.5 rounded-xl font-bold text-foreground/60 hover:bg-black/5 hover:text-foreground transition-colors"
           >
-            Hủy
+            {tr("Hủy")}
           </button>
           <button 
             onClick={handleOverride}
             className="px-5 py-2.5 rounded-xl font-bold bg-white text-destructive border border-destructive/20 shadow-sm hover:bg-destructive/5 transition-colors"
           >
-            Ép Giao (Force Assign)
+            {tr("Ép Giao (Force Assign)")}
           </button>
           <button 
             onClick={handleApplyRecommendation}
             className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 transition-all"
           >
-            Áp Dụng Đề Xuất
+            {tr("Áp Dụng Đề Xuất")}
           </button>
         </div>
       </div>

@@ -1,11 +1,13 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Loader2, Sparkles, BookOpen } from 'lucide-react';
 
 export default function AuthCallbackPage() {
+  const tr = useTranslate();
   const router = useRouter();
   const [statusMessage, setStatusMessage] = useState('Đang xác thực thông tin tài khoản Google...');
 
@@ -109,7 +111,7 @@ export default function AuthCallbackPage() {
         </div>
 
         <h2 className="text-2xl font-black text-white tracking-tight mb-3">
-          Đang kết nối Gmail Auth
+          {tr("Đang kết nối Gmail Auth")}
         </h2>
 
         <p className="text-slate-300 text-sm mb-6 leading-relaxed font-medium">
@@ -118,7 +120,7 @@ export default function AuthCallbackPage() {
 
         <div className="flex justify-center items-center gap-3 bg-white/5 py-3 px-4 rounded-xl border border-white/10 text-slate-200 text-xs font-semibold">
           <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
-          <span>Vui lòng đợi trong giây lát...</span>
+          <span>{tr("Vui lòng đợi trong giây lát...")}</span>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { ArrowLeft, ArrowRight, Calculator, Atom, FlaskConical, Dna, BookOpen, Languages, Scale, Globe, Hourglass, Check, Monitor, Cpu, Dumbbell, Shield, Music, Palette } from 'lucide-react';
@@ -35,6 +36,7 @@ const subjectsData = {
 };
 
 export default function Step2Page() {
+  const tr = useTranslate();
   const router = useRouter();
   const { state, updateState } = useOnboarding();
   const [error, setError] = useState('');
@@ -51,7 +53,7 @@ export default function Step2Page() {
 
   const handleNext = () => {
     if (state.selectedSubjects.length === 0) {
-      setError('Vui lòng chọn ít nhất một bộ môn');
+      setError(tr("Vui lòng chọn ít nhất một bộ môn"));
       return;
     }
     router.push('/teacher/onboarding/step-3');
@@ -62,9 +64,9 @@ export default function Step2Page() {
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-500" />
       
       <div className="mb-8">
-        <p className="text-blue-600 font-bold text-xs tracking-widest uppercase mb-2">BƯỚC 2 / 3</p>
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Chọn Tổ hợp và Bộ môn phụ trách</h2>
-        <p className="text-slate-600 text-sm">Cấp THPT Việt Nam phân chia 2 ban chính. Vui lòng chọn Ban rồi chọn Môn học tương ứng.</p>
+        <p className="text-blue-600 font-bold text-xs tracking-widest uppercase mb-2">{tr("BƯỚC 2 / 3")}</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">{tr("Chọn Tổ hợp và Bộ môn phụ trách")}</h2>
+        <p className="text-slate-600 text-sm">{tr("Cấp THPT Việt Nam phân chia 2 ban chính. Vui lòng chọn Ban rồi chọn Môn học tương ứng.")}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-8">
@@ -83,11 +85,11 @@ export default function Step2Page() {
                 "text-xs font-bold px-2 py-1 rounded",
                 state.subjectGroup === 'natural' ? "bg-blue-500 text-white" : "bg-slate-200 text-slate-600"
               )}>T/N</span>
-              <span className={clsx("font-semibold", state.subjectGroup === 'natural' ? "text-blue-600" : "text-slate-700")}>Ban Tự nhiên</span>
+              <span className={clsx("font-semibold", state.subjectGroup === 'natural' ? "text-blue-600" : "text-slate-700")}>{tr("Ban Tự nhiên")}</span>
             </div>
             {state.subjectGroup === 'natural' && <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
           </div>
-          <span className="text-slate-600 text-xs text-left">Toán, Lý, Hóa, Sinh, Tin, Công nghệ</span>
+          <span className="text-slate-600 text-xs text-left">{tr("Toán, Lý, Hóa, Sinh, Tin, Công nghệ")}</span>
         </button>
 
         <button
@@ -105,17 +107,17 @@ export default function Step2Page() {
                 "text-xs font-bold px-2 py-1 rounded",
                 state.subjectGroup === 'social' ? "bg-purple-500 text-white" : "bg-slate-200 text-slate-600"
               )}>X/H</span>
-              <span className={clsx("font-semibold", state.subjectGroup === 'social' ? "text-purple-600" : "text-slate-700")}>Ban Xã hội</span>
+              <span className={clsx("font-semibold", state.subjectGroup === 'social' ? "text-purple-600" : "text-slate-700")}>{tr("Ban Xã hội")}</span>
             </div>
             {state.subjectGroup === 'social' && <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
           </div>
-          <span className="text-slate-600 text-xs text-left">Văn, Sử, Địa, Ngoại ngữ, KT&PL, GDTC, QPAN, Nghệ thuật</span>
+          <span className="text-slate-600 text-xs text-left">{tr("Văn, Sử, Địa, Ngoại ngữ, KT&PL, GDTC, QPAN, Nghệ thuật")}</span>
         </button>
       </div>
 
       <div className="mb-8">
         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
-          CHỌN BỘ MÔN GIẢNG DẠY TRONG {state.subjectGroup === 'natural' ? 'BAN TỰ NHIÊN' : 'BAN XÃ HỘI'}
+          {tr("CHỌN BỘ MÔN GIẢNG DẠY TRONG")} {state.subjectGroup === 'natural' ? tr("BAN TỰ NHIÊN") : tr("BAN XÃ HỘI")}
         </h3>
         <div className="grid grid-cols-2 gap-4">
           {subjectsData[state.subjectGroup].map((subject) => {
@@ -136,8 +138,8 @@ export default function Step2Page() {
                   <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900 mb-1">{subject.name}</div>
-                  <div className="text-[10px] text-slate-500 leading-relaxed">{subject.desc}</div>
+                  <div className="font-semibold text-slate-900 mb-1">{tr(subject.name)}</div>
+                  <div className="text-[10px] text-slate-500 leading-relaxed">{tr(subject.desc)}</div>
                 </div>
               </button>
             )
@@ -153,13 +155,13 @@ export default function Step2Page() {
           className="text-slate-500 hover:text-slate-800 flex items-center gap-2 text-sm font-medium transition-colors py-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Quay lại
+          {tr("Quay lại")}
         </button>
         <button 
           onClick={handleNext}
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-xl flex items-center gap-2 transition-colors"
         >
-          Tiếp theo
+          {tr("Tiếp theo")}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

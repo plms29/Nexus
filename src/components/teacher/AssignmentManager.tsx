@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { Task } from '@/lib/engine/types';
@@ -34,6 +35,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 
 export const AssignmentManager: React.FC = () => {
+  const tr = useTranslate();
   const { tasks, workmap, updateTask, deleteTask, classes, subjects } = useStore();
   
   const [filterClass, setFilterClass] = useState<string>('all');
@@ -109,7 +111,7 @@ export const AssignmentManager: React.FC = () => {
     if (success) {
       setEditingTask(null);
     } else {
-      alert('Lỗi cập nhật bài tập!');
+      alert(tr("Lỗi cập nhật bài tập!"));
     }
   };
 
@@ -123,7 +125,7 @@ export const AssignmentManager: React.FC = () => {
     if (success) {
       setDeletingTaskId(null);
     } else {
-      alert('Lỗi xóa bài tập!');
+      alert(tr("Lỗi xóa bài tập!"));
     }
   };
 
@@ -143,7 +145,7 @@ export const AssignmentManager: React.FC = () => {
         {
           id: 'demo-1',
           task_id: task.id,
-          question_text: `Câu 1 (${task.title}): Hãy chọn khẳng định đúng nhất về chủ đề này.`,
+          question_text: `Câu 1 (${tr(task.title)}): Hãy chọn khẳng định đúng nhất về chủ đề này.`,
           options: ['Đáp án A: Đúng hoàn toàn', 'Đáp án B: Sai một phần', 'Đáp án C: Chưa đủ dữ kiện', 'Đáp án D: Tất cả đều sai'],
           correct_answer: 'A',
           level: 'l1',
@@ -152,7 +154,7 @@ export const AssignmentManager: React.FC = () => {
         {
           id: 'demo-2',
           task_id: task.id,
-          question_text: `Câu 2 (${task.title}): Tính toán giá trị hoặc phân tích tình huống thực tế sau.`,
+          question_text: `Câu 2 (${tr(task.title)}): Tính toán giá trị hoặc phân tích tình huống thực tế sau.`,
           options: ['Phương án 1: Kết quả = 100', 'Phương án 2: Kết quả = 250', 'Phương án 3: Kết quả = 500', 'Phương án 4: Kết quả = 1000'],
           correct_answer: 'B',
           level: 'l2',
@@ -255,7 +257,7 @@ export const AssignmentManager: React.FC = () => {
   // Delete Question
   const handleDeleteQuestion = async (qId?: string) => {
     if (!qId) return;
-    if (!confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) return;
+    if (!confirm(tr("Bạn có chắc chắn muốn xóa câu hỏi này?"))) return;
 
     await deleteQuestionFromDb(qId);
     setQuestionsList(prev => prev.filter(q => q.id !== qId));
@@ -271,40 +273,40 @@ export const AssignmentManager: React.FC = () => {
               <FileText className="w-4 h-4" />
             </div>
             <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              Quản Lý Bài Tập & Đề Thi Đã Giao
+              {tr("Quản Lý Bài Tập & Đề Thi Đã Giao")}
             </h2>
           </div>
           <p className="text-xs font-semibold text-slate-500">
-            Giáo viên có toàn quyền chỉnh sửa, xóa, đổi tên, thêm/bớt và biên tập nội dung câu hỏi bài tập của mình.
+            {tr("Giáo viên có toàn quyền chỉnh sửa, xóa, đổi tên, thêm/bớt và biên tập nội dung câu hỏi bài tập của mình.")}
           </p>
         </div>
 
         {/* Filters */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80">
-            <span className="text-xs font-bold text-slate-500 uppercase px-2">Lớp:</span>
+            <span className="text-xs font-bold text-slate-500 uppercase px-2">{tr("Lớp:")}</span>
             <select 
               value={filterClass} 
               onChange={e => setFilterClass(e.target.value)} 
               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
             >
-              <option value="all">Tất cả các lớp</option>
+              <option value="all">{tr("Tất cả các lớp")}</option>
               {classes?.map((c: string) => (
-                <option key={c} value={c}>Lớp {c}</option>
+                <option key={c} value={c}>{tr("Lớp")} {c}</option>
               ))}
             </select>
           </div>
 
           <div className="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80">
-            <span className="text-xs font-bold text-slate-500 uppercase px-2">Môn:</span>
+            <span className="text-xs font-bold text-slate-500 uppercase px-2">{tr("Môn:")}</span>
             <select 
               value={filterSubject} 
               onChange={e => setFilterSubject(e.target.value)} 
               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
             >
-              <option value="all">Tất cả môn học</option>
+              <option value="all">{tr("Tất cả môn học")}</option>
               {subjects?.map((s: string) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>{tr(s)}</option>
               ))}
             </select>
           </div>
@@ -317,9 +319,9 @@ export const AssignmentManager: React.FC = () => {
           <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
             <BookOpen className="w-6 h-6" />
           </div>
-          <h3 className="font-extrabold text-slate-800 text-base">Chưa có bài tập nào</h3>
+          <h3 className="font-extrabold text-slate-800 text-base">{tr("Chưa có bài tập nào")}</h3>
           <p className="text-xs text-slate-500 font-semibold max-w-sm mx-auto">
-            Bạn chưa giao bài tập nào cho lớp học đã chọn. Hãy chuyển sang mục "Tạo Bài Tập" để giao bài mới.
+            {tr("Bạn chưa giao bài tập nào cho lớp học đã chọn. Hãy chuyển sang mục \"Tạo Bài Tập\" để giao bài mới.")}
           </p>
         </div>
       ) : (
@@ -337,37 +339,37 @@ export const AssignmentManager: React.FC = () => {
                   {/* Top Badges */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="px-2.5 py-1 rounded-xl text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80">
-                      Môn {task.subject_id}
+                      {tr("Môn")} {tr(task.subject_id)}
                     </span>
                     <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/80">
-                      Lớp {task.class_id}
+                      {tr("Lớp")} {task.class_id}
                     </span>
                   </div>
 
                   {/* Task Title */}
                   <h3 className="text-lg font-black text-slate-900 leading-snug tracking-tight mb-2 group-hover:text-blue-600 transition-colors">
-                    {task.title}
+                    {tr(task.title)}
                   </h3>
 
                   {/* Task Meta Details */}
                   <div className="space-y-1.5 text-xs text-slate-500 font-semibold bg-slate-50 p-3 rounded-2xl border border-slate-100">
                     <div className="flex items-center justify-between">
-                      <span>Dạng bài:</span>
+                      <span>{tr("Dạng bài:")}</span>
                       <strong className="text-slate-800 capitalize">
-                        {getTaskTypeLabel(task.type)}
+                        {tr(getTaskTypeLabel(task.type))}
                       </strong>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Hình thức:</span>
-                      <strong className="text-slate-800">{task.isGroup ? 'Làm nhóm' : 'Cá nhân'}</strong>
+                      <span>{tr("Hình thức:")}</span>
+                      <strong className="text-slate-800">{task.isGroup ? tr("Làm nhóm") : tr("Cá nhân")}</strong>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Tải học tập:</span>
-                      <strong className="text-blue-600 font-black">{totalLU > 0 ? `${totalLU.toFixed(1)} LU` : 'Tự động tính'}</strong>
+                      <span>{tr("Tải học tập:")}</span>
+                      <strong className="text-blue-600 font-black">{totalLU > 0 ? `${totalLU.toFixed(1)} LU` : tr("Tự động tính")}</strong>
                     </div>
                     <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
                       <span className="flex items-center gap-1 text-slate-500">
-                        <CalendarIcon className="w-3.5 h-3.5 text-slate-400" /> Hạn nộp:
+                        <CalendarIcon className="w-3.5 h-3.5 text-slate-400" /> {tr("Hạn nộp:")}
                       </span>
                       <strong className="text-slate-900 font-black">{task.deadline}</strong>
                     </div>
@@ -380,27 +382,27 @@ export const AssignmentManager: React.FC = () => {
                     type="button"
                     onClick={() => handleOpenQuestionsModal(task)}
                     className="flex-1 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 border border-blue-200/60 cursor-pointer"
-                    title="Quản lý & Chỉnh sửa câu hỏi"
+                    title={tr("Quản lý & Chỉnh sửa câu hỏi")}
                   >
-                    <HelpCircle className="w-3.5 h-3.5" /> Câu hỏi
+                    <HelpCircle className="w-3.5 h-3.5" /> {tr("Câu hỏi")}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleOpenEditModal(task)}
                     className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 border border-slate-200 cursor-pointer"
-                    title="Đổi tên & Sửa thông tin bài tập"
+                    title={tr("Đổi tên & Sửa thông tin bài tập")}
                   >
-                    <Edit3 className="w-3.5 h-3.5" /> Sửa
+                    <Edit3 className="w-3.5 h-3.5" /> {tr("Sửa")}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setDeletingTaskId(task.id)}
                     className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 border border-rose-200/60 cursor-pointer"
-                    title="Xóa bài tập này"
+                    title={tr("Xóa bài tập này")}
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> Xóa
+                    <Trash2 className="w-3.5 h-3.5" /> {tr("Xóa")}
                   </button>
                 </div>
               </div>
@@ -428,7 +430,7 @@ export const AssignmentManager: React.FC = () => {
             >
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                  <Edit3 className="w-5 h-5 text-blue-600" /> Chỉnh Sửa Thông Tin Bài Tập
+                  <Edit3 className="w-5 h-5 text-blue-600" /> {tr("Chỉnh Sửa Thông Tin Bài Tập")}
                 </h3>
                 <button 
                   type="button" 
@@ -441,7 +443,7 @@ export const AssignmentManager: React.FC = () => {
 
               <form onSubmit={handleSaveTaskEdit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Tên Bài Tập</label>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Tên Bài Tập")}</label>
                   <input 
                     type="text" 
                     value={editTitle} 
@@ -453,7 +455,7 @@ export const AssignmentManager: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase">Lớp học</label>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Lớp học")}</label>
                     <select 
                       value={editClassId} 
                       onChange={e => setEditClassId(e.target.value)}
@@ -466,14 +468,14 @@ export const AssignmentManager: React.FC = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase">Bộ môn</label>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Bộ môn")}</label>
                     <select 
                       value={editSubjectId} 
                       onChange={e => setEditSubjectId(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
                       {subjects?.map((s: string) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>{tr(s)}</option>
                       ))}
                     </select>
                   </div>
@@ -481,21 +483,21 @@ export const AssignmentManager: React.FC = () => {
 
                 <div className="space-y-1.5">
                   <DatePicker 
-                    label="Hạn Nộp Mới"
+                    label={tr("Hạn Nộp Mới")}
                     value={editDeadline}
                     onChange={setEditDeadline}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Hình Thức</label>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Hình Thức")}</label>
                   <select 
                     value={editIsGroup ? 'group' : 'individual'} 
                     onChange={e => setEditIsGroup(e.target.value === 'group')}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    <option value="individual">Cá nhân</option>
-                    <option value="group">Làm nhóm</option>
+                    <option value="individual">{tr("Cá nhân")}</option>
+                    <option value="group">{tr("Làm nhóm")}</option>
                   </select>
                 </div>
 
@@ -505,14 +507,14 @@ export const AssignmentManager: React.FC = () => {
                     onClick={() => setEditingTask(null)}
                     className="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100"
                   >
-                    Hủy
+                    {tr("Hủy")}
                   </button>
                   <button
                     type="submit"
                     disabled={isSavingTask}
                     className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md flex items-center gap-2"
                   >
-                    <Save className="w-4 h-4" /> {isSavingTask ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                    <Save className="w-4 h-4" /> {isSavingTask ? tr("Đang lưu...") : tr("Lưu Thay Đổi")}
                   </button>
                 </div>
               </form>
@@ -542,9 +544,9 @@ export const AssignmentManager: React.FC = () => {
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900">Xác Nhận Xóa Bài Tập?</h3>
+                <h3 className="text-lg font-black text-slate-900">{tr("Xác Nhận Xóa Bài Tập?")}</h3>
                 <p className="text-xs text-slate-500 font-semibold mt-1">
-                  Bài tập này và toàn bộ dữ liệu phân bổ Workmap liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                  {tr("Bài tập này và toàn bộ dữ liệu phân bổ Workmap liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống.")}
                 </p>
               </div>
 
@@ -554,7 +556,7 @@ export const AssignmentManager: React.FC = () => {
                   onClick={() => setDeletingTaskId(null)}
                   className="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100"
                 >
-                  Hủy bỏ
+                  {tr("Hủy bỏ")}
                 </button>
                 <button
                   type="button"
@@ -562,7 +564,7 @@ export const AssignmentManager: React.FC = () => {
                   disabled={isDeleting}
                   className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-md flex items-center gap-2"
                 >
-                  <Trash2 className="w-4 h-4" /> {isDeleting ? 'Đang xóa...' : 'Xóa Bài Tập'}
+                  <Trash2 className="w-4 h-4" /> {isDeleting ? tr("Đang xóa...") : tr("Xóa Bài Tập")}
                 </button>
               </div>
             </motion.div>
@@ -595,10 +597,10 @@ export const AssignmentManager: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-black tracking-tight text-white">
-                      Quản Lý & Chỉnh Sửa Câu Hỏi ({managingQuestionsTask.title})
+                      {tr("Quản Lý & Chỉnh Sửa Câu Hỏi (")}{managingQuestionsTask.title})
                     </h3>
                     <p className="text-xs text-blue-200 font-medium">
-                      Thêm, xóa, sửa nội dung đề bài, các lựa chọn đáp án và mức độ nhận thức.
+                      {tr("Thêm, xóa, sửa nội dung đề bài, các lựa chọn đáp án và mức độ nhận thức.")}
                     </p>
                   </div>
                 </div>
@@ -617,14 +619,14 @@ export const AssignmentManager: React.FC = () => {
                 {/* Header Action: Add Question Button */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <h4 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
-                    Danh Sách Câu Hỏi ({questionsList.length})
+                    {tr("Danh Sách Câu Hỏi (")}{questionsList.length})
                   </h4>
                   <button
                     type="button"
                     onClick={() => handleStartEditQuestion()}
                     className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Plus className="w-4 h-4" /> Thêm Câu Hỏi Mới
+                    <Plus className="w-4 h-4" /> {tr("Thêm Câu Hỏi Mới")}
                   </button>
                 </div>
 
@@ -639,33 +641,33 @@ export const AssignmentManager: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-blue-200/60 pb-3">
                       <h5 className="font-black text-blue-900 text-sm flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-blue-600" />
-                        {editingQuestion ? 'Biên Tập Nội Dung Câu Hỏi' : 'Thêm Câu Hỏi Mới Cho Bài Tập'}
+                        {editingQuestion ? tr("Biên Tập Nội Dung Câu Hỏi") : tr("Thêm Câu Hỏi Mới Cho Bài Tập")}
                       </h5>
                       <button
                         type="button"
                         onClick={() => { setIsAddingNewQuestion(false); setEditingQuestion(null); }}
                         className="text-xs font-bold text-slate-500 hover:text-slate-800"
                       >
-                        Hủy
+                        {tr("Hủy")}
                       </button>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-extrabold text-slate-700 uppercase">Nội dung câu hỏi / Đề bài</label>
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Nội dung câu hỏi / Đề bài")}</label>
                       <textarea
                         value={qText}
                         onChange={e => setQText(e.target.value)}
                         required
                         rows={3}
                         className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        placeholder="Nhập nội dung đề bài..."
+                        placeholder={tr("Nhập nội dung đề bài...")}
                       />
                     </div>
 
                     {/* Ảnh minh họa cho đề bài */}
                     <div className="space-y-2">
                       <label className="block text-xs font-extrabold text-slate-700 uppercase">
-                        Ảnh minh họa <span className="text-slate-400 font-bold normal-case">(không bắt buộc)</span>
+                        {tr("Ảnh minh họa")} <span className="text-slate-400 font-bold normal-case">{tr("(không bắt buộc)")}</span>
                       </label>
 
                       <input
@@ -681,7 +683,7 @@ export const AssignmentManager: React.FC = () => {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={qImageUrl}
-                            alt="Ảnh minh họa câu hỏi"
+                            alt={tr("Ảnh minh họa câu hỏi")}
                             className="max-h-48 w-auto mx-auto rounded-xl object-contain"
                           />
                           <div className="flex items-center justify-center gap-2 pt-3">
@@ -691,14 +693,14 @@ export const AssignmentManager: React.FC = () => {
                               disabled={isUploadingImage}
                               className="px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
                             >
-                              Đổi ảnh khác
+                              {tr("Đổi ảnh khác")}
                             </button>
                             <button
                               type="button"
                               onClick={() => setQImageUrl(null)}
                               className="px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100"
                             >
-                              Gỡ ảnh
+                              {tr("Gỡ ảnh")}
                             </button>
                           </div>
                         </div>
@@ -715,9 +717,9 @@ export const AssignmentManager: React.FC = () => {
                             <ImagePlus className="w-5 h-5" />
                           )}
                           <span className="text-xs font-extrabold">
-                            {isUploadingImage ? 'Đang tải ảnh lên...' : 'Tải ảnh lên cho đề bài'}
+                            {isUploadingImage ? tr("Đang tải ảnh lên...") : tr("Tải ảnh lên cho đề bài")}
                           </span>
-                          <span className="text-[11px] font-semibold text-slate-400">PNG, JPG, WEBP — tối đa 5MB</span>
+                          <span className="text-[11px] font-semibold text-slate-400">{tr("PNG, JPG, WEBP — tối đa 5MB")}</span>
                         </button>
                       )}
 
@@ -728,53 +730,53 @@ export const AssignmentManager: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="block text-[11px] font-bold text-slate-600">Đáp án A</label>
-                        <input type="text" value={qOptionA} onChange={e => setQOptionA(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" placeholder="Lựa chọn A..." />
+                        <label className="block text-[11px] font-bold text-slate-600">{tr("Đáp án A")}</label>
+                        <input type="text" value={qOptionA} onChange={e => setQOptionA(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" placeholder={tr("Lựa chọn A...")} />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-[11px] font-bold text-slate-600">Đáp án B</label>
-                        <input type="text" value={qOptionB} onChange={e => setQOptionB(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" placeholder="Lựa chọn B..." />
+                        <label className="block text-[11px] font-bold text-slate-600">{tr("Đáp án B")}</label>
+                        <input type="text" value={qOptionB} onChange={e => setQOptionB(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" placeholder={tr("Lựa chọn B...")} />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-[11px] font-bold text-slate-600">Đáp án C</label>
-                        <input type="text" value={qOptionC} onChange={e => setQOptionC(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" placeholder="Lựa chọn C..." />
+                        <label className="block text-[11px] font-bold text-slate-600">{tr("Đáp án C")}</label>
+                        <input type="text" value={qOptionC} onChange={e => setQOptionC(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" placeholder={tr("Lựa chọn C...")} />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-[11px] font-bold text-slate-600">Đáp án D</label>
-                        <input type="text" value={qOptionD} onChange={e => setQOptionD(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" placeholder="Lựa chọn D..." />
+                        <label className="block text-[11px] font-bold text-slate-600">{tr("Đáp án D")}</label>
+                        <input type="text" value={qOptionD} onChange={e => setQOptionD(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" placeholder={tr("Lựa chọn D...")} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                       <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700">Đáp án ĐÚNG</label>
+                        <label className="block text-xs font-bold text-slate-700">{tr("Đáp án ĐÚNG")}</label>
                         <select value={qCorrect} onChange={e => setQCorrect(e.target.value)} className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold">
-                          <option value="A">Đáp án A</option>
-                          <option value="B">Đáp án B</option>
-                          <option value="C">Đáp án C</option>
-                          <option value="D">Đáp án D</option>
+                          <option value="A">{tr("Đáp án A")}</option>
+                          <option value="B">{tr("Đáp án B")}</option>
+                          <option value="C">{tr("Đáp án C")}</option>
+                          <option value="D">{tr("Đáp án D")}</option>
                         </select>
                       </div>
 
                       <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700">Mức độ nhận thức</label>
+                        <label className="block text-xs font-bold text-slate-700">{tr("Mức độ nhận thức")}</label>
                         <select value={qLevel} onChange={e => setQLevel(e.target.value as any)} className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold">
-                          <option value="l1">Nhận biết (Dễ)</option>
-                          <option value="l2">Thông hiểu (Trung bình)</option>
-                          <option value="l3">Vận dụng (Khó)</option>
-                          <option value="l4">Vận dụng cao (Rất khó)</option>
+                          <option value="l1">{tr("Nhận biết (Dễ)")}</option>
+                          <option value="l2">{tr("Thông hiểu (Trung bình)")}</option>
+                          <option value="l3">{tr("Vận dụng (Khó)")}</option>
+                          <option value="l4">{tr("Vận dụng cao (Rất khó)")}</option>
                         </select>
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700">Lời giải chi tiết / Hướng dẫn</label>
+                      <label className="block text-xs font-bold text-slate-700">{tr("Lời giải chi tiết / Hướng dẫn")}</label>
                       <input 
                         type="text" 
                         value={qExplanation} 
                         onChange={e => setQExplanation(e.target.value)} 
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold"
-                        placeholder="Nhập hướng dẫn giải..." 
+                        placeholder={tr("Nhập hướng dẫn giải...")} 
                       />
                     </div>
 
@@ -784,14 +786,14 @@ export const AssignmentManager: React.FC = () => {
                         onClick={() => { setIsAddingNewQuestion(false); setEditingQuestion(null); }}
                         className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200"
                       >
-                        Hủy
+                        {tr("Hủy")}
                       </button>
                       <button
                         type="submit"
                         disabled={isSavingQuestion || isUploadingImage}
                         className="px-5 py-2 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-md disabled:opacity-60"
                       >
-                        {isSavingQuestion ? 'Đang lưu...' : isUploadingImage ? 'Đang tải ảnh...' : 'Lưu Câu Hỏi'}
+                        {isSavingQuestion ? tr("Đang lưu...") : isUploadingImage ? tr("Đang tải ảnh...") : tr("Lưu Câu Hỏi")}
                       </button>
                     </div>
                   </motion.form>
@@ -800,11 +802,11 @@ export const AssignmentManager: React.FC = () => {
                 {/* Questions List Render */}
                 {isLoadingQuestions ? (
                   <div className="text-center py-8 text-xs font-bold text-slate-400">
-                    Đang tải danh sách câu hỏi...
+                    {tr("Đang tải danh sách câu hỏi...")}
                   </div>
                 ) : questionsList.length === 0 ? (
                   <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs font-bold">
-                    Bài tập này chưa có câu hỏi nào. Bấm nút "Thêm Câu Hỏi Mới" ở trên để bổ sung.
+                    {tr("Bài tập này chưa có câu hỏi nào. Bấm nút \"Thêm Câu Hỏi Mới\" ở trên để bổ sung.")}
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -820,13 +822,13 @@ export const AssignmentManager: React.FC = () => {
                             </span>
                             <div className="space-y-2">
                               <div className="font-extrabold text-slate-900 text-sm leading-relaxed">
-                                {q.question_text}
+                                {tr(q.question_text)}
                               </div>
                               {q.image_url && (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img
                                   src={q.image_url}
-                                  alt="Ảnh minh họa câu hỏi"
+                                  alt={tr("Ảnh minh họa câu hỏi")}
                                   className="max-h-44 w-auto rounded-xl border border-slate-200 object-contain"
                                 />
                               )}
@@ -838,7 +840,7 @@ export const AssignmentManager: React.FC = () => {
                               type="button"
                               onClick={() => handleStartEditQuestion(q)}
                               className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                              title="Sửa nội dung câu hỏi"
+                              title={tr("Sửa nội dung câu hỏi")}
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
@@ -846,7 +848,7 @@ export const AssignmentManager: React.FC = () => {
                               type="button"
                               onClick={() => handleDeleteQuestion(q.id)}
                               className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                              title="Xóa câu hỏi này"
+                              title={tr("Xóa câu hỏi này")}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -870,7 +872,7 @@ export const AssignmentManager: React.FC = () => {
                                 <span className={clsx("w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0", isCorrect ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600")}>
                                   {optLetter}
                                 </span>
-                                <span>{opt}</span>
+                                <span>{tr(opt)}</span>
                               </div>
                             );
                           })}
@@ -879,7 +881,7 @@ export const AssignmentManager: React.FC = () => {
                         {/* Explanation */}
                         {q.explanation && (
                           <div className="text-xs text-slate-500 font-semibold bg-slate-50 p-2.5 rounded-xl border border-slate-100 ml-8">
-                            <span className="font-extrabold text-slate-700">Lời giải:</span> {q.explanation}
+                            <span className="font-extrabold text-slate-700">{tr("Lời giải:")}</span> {q.explanation}
                           </div>
                         )}
                       </div>
@@ -891,14 +893,14 @@ export const AssignmentManager: React.FC = () => {
               {/* Modal Footer */}
               <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between shrink-0">
                 <span className="text-xs font-bold text-slate-500">
-                  ExamLoad Radar • Toàn quyền chỉnh sửa đề thi cho Giáo viên bộ môn
+                  {tr("ExamLoad Radar • Toàn quyền chỉnh sửa đề thi cho Giáo viên bộ môn")}
                 </span>
                 <button
                   type="button"
                   onClick={() => setManagingQuestionsTask(null)}
                   className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition-colors cursor-pointer"
                 >
-                  Hoàn Tất
+                  {tr("Hoàn Tất")}
                 </button>
               </div>
             </motion.div>

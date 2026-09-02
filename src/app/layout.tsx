@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
+import { LanguageSync } from "@/lib/i18n";
 
 const nunito = Nunito({
   variable: "--font-sans",
@@ -23,7 +24,10 @@ export default function RootLayout({
       className={`${nunito.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>{children}</body>
+      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+        <LanguageSync />
+        {children}
+      </body>
     </html>
   );
 }

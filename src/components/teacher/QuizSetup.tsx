@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslate } from '@/lib/i18n';
 import { useState } from 'react';
 import { Clock, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
@@ -33,16 +36,19 @@ const timeOptions = [
   { label: '5 phút', value: 300 },
 ];
 
-function formatTime(seconds: number) {
-  if (seconds === 0) return '0 giây';
+function formatTime(seconds: number, tr: (text: string) => string) {
+  const sec = tr('giây');
+  const min = tr('phút');
+  if (seconds === 0) return `0 ${sec}`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  if (m === 0) return `${s} giây`;
-  if (s === 0) return `${m} phút`;
-  return `${m} phút ${s} giây`;
+  if (m === 0) return `${s} ${sec}`;
+  if (s === 0) return `${m} ${min}`;
+  return `${m} ${min} ${s} ${sec}`;
 }
 
 export default function QuizSetup() {
+  const tr = useTranslate();
   const [data, setData] = useState<RowData[]>(initialData);
 
   const updateQuestions = (id: Difficulty, val: number) => {
@@ -64,23 +70,23 @@ export default function QuizSetup() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-slate-900">Phân Bổ Cấu Trúc Đề & Thời Gian</h2>
+            <h2 className="text-xl font-bold text-slate-900">{tr("Phân Bổ Cấu Trúc Đề & Thời Gian")}</h2>
           </div>
-          <p className="text-slate-500 text-sm">Thiết lập tỷ lệ câu hỏi và cấu hình thời gian làm bài tối đa cho từng cấp độ.</p>
+          <p className="text-slate-500 text-sm">{tr("Thiết lập tỷ lệ câu hỏi và cấu hình thời gian làm bài tối đa cho từng cấp độ.")}</p>
         </div>
         
         <div className="bg-blue-50 border border-blue-100 text-blue-700 text-xs px-4 py-3 rounded-xl flex items-center gap-2 max-w-xs">
           <Sparkles className="w-4 h-4 shrink-0 text-blue-600" />
-          <span>Hệ thống tự động tính: <strong>Tổng thời gian = Số câu × Thời gian/câu</strong></span>
+          <span>{tr("Hệ thống tự động tính:")} <strong>{tr("Tổng thời gian = Số câu × Thời gian/câu")}</strong></span>
         </div>
       </div>
 
       <div className="p-6">
         <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 mb-4 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          <div>Độ Khó</div>
-          <div className="text-center">Số Lượng Câu Hỏi</div>
-          <div className="text-center">Thời Gian / Câu</div>
-          <div className="text-right">Tổng Thời Gian</div>
+          <div>{tr("Độ Khó")}</div>
+          <div className="text-center">{tr("Số Lượng Câu Hỏi")}</div>
+          <div className="text-center">{tr("Thời Gian / Câu")}</div>
+          <div className="text-right">{tr("Tổng Thời Gian")}</div>
         </div>
 
         <div className="space-y-3">
@@ -91,10 +97,10 @@ export default function QuizSetup() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className={clsx("text-xs font-bold px-2 py-0.5 rounded", row.bg, row.color)}>
-                      {row.title} ({row.level})
+                      {tr(row.title)} ({tr(row.level)})
                     </span>
                   </div>
-                  <p className="text-slate-500 text-xs pr-4">{row.desc}</p>
+                  <p className="text-slate-500 text-xs pr-4">{tr(row.desc)}</p>
                 </div>
 
                 <div className="flex items-center justify-center gap-2">
@@ -105,7 +111,7 @@ export default function QuizSetup() {
                     onChange={(e) => updateQuestions(row.id, parseInt(e.target.value) || 0)}
                     className="w-16 bg-white border border-slate-200 text-center text-slate-900 rounded-lg py-1.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
-                  <span className="text-slate-500 text-xs">câu</span>
+                  <span className="text-slate-500 text-xs">{tr("câu")}</span>
                 </div>
 
                 <div className="flex justify-center">
@@ -116,13 +122,13 @@ export default function QuizSetup() {
                     style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1em' }}
                   >
                     {timeOptions.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <option key={opt.value} value={opt.value}>{tr(opt.label)}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="text-right">
-                  <div className="font-bold text-slate-900">{formatTime(rowTotalSeconds)}</div>
+                  <div className="font-bold text-slate-900">{formatTime(rowTotalSeconds, tr)}</div>
                   <div className="text-[10px] text-slate-500">({row.questions} × {row.timePerQuestion}s)</div>
                 </div>
               </div>
@@ -131,12 +137,12 @@ export default function QuizSetup() {
         </div>
 
         <div className="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-200 grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center">
-          <div className="font-bold text-blue-700 text-lg">Tổng Cộng Đề Thi</div>
-          <div className="text-center font-bold text-slate-900 text-lg">{totalQuestions} <span className="text-sm font-normal text-slate-500">câu</span></div>
-          <div className="text-center text-slate-500 text-xs italic">Thời gian tùy chỉnh từng câu</div>
+          <div className="font-bold text-blue-700 text-lg">{tr("Tổng Cộng Đề Thi")}</div>
+          <div className="text-center font-bold text-slate-900 text-lg">{totalQuestions} <span className="text-sm font-normal text-slate-500">{tr("câu")}</span></div>
+          <div className="text-center text-slate-500 text-xs italic">{tr("Thời gian tùy chỉnh từng câu")}</div>
           <div className="text-right">
-            <div className="font-bold text-emerald-600 text-xl">{formatTime(totalTimeSeconds)}</div>
-            <div className="text-[10px] text-slate-500">(~{Math.round(totalTimeSeconds/60)} phút)</div>
+            <div className="font-bold text-emerald-600 text-xl">{formatTime(totalTimeSeconds, tr)}</div>
+            <div className="text-[10px] text-slate-500">(~{Math.round(totalTimeSeconds/60)} {tr("phút)")}</div>
           </div>
         </div>
       </div>

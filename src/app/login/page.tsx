@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
+import { LanguageToggle } from '@/components/LanguageToggle';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -32,6 +34,7 @@ const staggerContainer = {
 };
 
 function LoginContent() {
+  const tr = useTranslate();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -120,7 +123,7 @@ function LoginContent() {
       }
 
     } catch (err: any) {
-      setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại Email và Mật khẩu.');
+      setError(err.message || tr('Đăng nhập thất bại. Vui lòng kiểm tra lại Email và Mật khẩu.'));
       setLoading(false);
     }
   };
@@ -133,19 +136,19 @@ function LoginContent() {
     setSuccessMsg(null);
 
     if (!fullName.trim()) {
-      setError('Vui lòng nhập Họ và tên của bạn.');
+      setError(tr("Vui lòng nhập Họ và tên của bạn."));
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự.');
+      setError(tr("Mật khẩu phải có ít nhất 6 ký tự."));
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Mật khẩu nhập lại không trùng khớp. Vui lòng kiểm tra lại!');
+      setError(tr("Mật khẩu nhập lại không trùng khớp. Vui lòng kiểm tra lại!"));
       setLoading(false);
       return;
     }
@@ -202,7 +205,7 @@ function LoginContent() {
         console.warn('DB record creation warning:', dbError.message);
       }
 
-      setSuccessMsg('Đăng ký thành công! Vui lòng điền thông tin cá nhân...');
+      setSuccessMsg(tr("Đăng ký thành công! Vui lòng điền thông tin cá nhân..."));
 
       setTimeout(() => {
         if (selectedRole === 'teacher') {
@@ -214,7 +217,7 @@ function LoginContent() {
 
     } catch (err: any) {
       console.error('Sign up error:', err);
-      setError(err.message || 'Đăng ký thất bại. Email có thể đã tồn tại hoặc không hợp lệ.');
+      setError(err.message || tr('Đăng ký thất bại. Email có thể đã tồn tại hoặc không hợp lệ.'));
       setLoading(false);
     }
   };
@@ -254,13 +257,13 @@ function LoginContent() {
         >
           <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/30 border border-blue-400/30 text-white text-sm font-semibold mb-6 backdrop-blur-sm">
             <Sparkles className="w-4 h-4 text-blue-200" />
-            Nền tảng Quản lý Đề thi & Khối lượng học tập
+            {tr("Nền tảng Quản lý Đề thi & Khối lượng học tập")}
           </motion.div>
           <motion.h1 variants={fadeInUp} className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-6">
-            Học tập hiệu quả hơn, <br /> giảng dạy thông minh hơn.
+            {tr("Học tập hiệu quả hơn,")} <br /> {tr("giảng dạy thông minh hơn.")}
           </motion.h1>
           <motion.p variants={fadeInUp} className="text-blue-100 text-lg leading-relaxed mb-10">
-            Hệ sinh thái phân quyền độc đáo hỗ trợ Giáo viên thiết lập bài tập khoa học và Giúp Học sinh kiểm soát áp lực thi cử.
+            {tr("Hệ sinh thái phân quyền độc đáo hỗ trợ Giáo viên thiết lập bài tập khoa học và Giúp Học sinh kiểm soát áp lực thi cử.")}
           </motion.p>
           
           <motion.div variants={fadeInUp} className="relative h-40">
@@ -274,7 +277,7 @@ function LoginContent() {
               </div>
               <div>
                 <div className="text-white font-bold text-sm">Supabase Database</div>
-                <div className="text-blue-200 text-xs">Mã hóa mật khẩu an toàn</div>
+                <div className="text-blue-200 text-xs">{tr("Mã hóa mật khẩu an toàn")}</div>
               </div>
             </motion.div>
 
@@ -287,8 +290,8 @@ function LoginContent() {
                 <UserCheck className="w-5 h-5 text-indigo-300" />
               </div>
               <div>
-                <div className="text-white font-bold text-sm">Phân quyền vai trò</div>
-                <div className="text-blue-200 text-xs">Giáo viên & Học sinh</div>
+                <div className="text-white font-bold text-sm">{tr("Phân quyền vai trò")}</div>
+                <div className="text-blue-200 text-xs">{tr("Giáo viên & Học sinh")}</div>
               </div>
             </motion.div>
           </motion.div>
@@ -308,24 +311,27 @@ function LoginContent() {
 
       {/* Right Panel - Auth Forms */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 lg:px-20 relative py-12 bg-white">
+        <div className="absolute top-6 right-6 z-10">
+          <LanguageToggle compact={false} />
+        </div>
         <Link 
           href="/" 
           className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors group"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Trang chủ
+          {tr("Trang chủ")}
         </Link>
 
         <div className="w-full max-w-md mx-auto">
           {/* Header & Tab Switcher */}
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">
-              {authMode === 'login' ? 'Chào mừng trở lại! 👋' : 'Tạo tài khoản mới 🚀'}
+              {authMode === 'login' ? tr("Chào mừng trở lại! 👋") : tr("Tạo tài khoản mới 🚀")}
             </h2>
             <p className="text-slate-600 text-sm font-medium mb-6">
               {authMode === 'login' 
-                ? 'Đăng nhập bằng Email & Mật khẩu để tiếp tục' 
-                : 'Đăng ký tài khoản Supabase với vai trò mong muốn'}
+                ? tr("Đăng nhập bằng Email & Mật khẩu để tiếp tục") 
+                : tr("Đăng ký tài khoản Supabase với vai trò mong muốn")}
             </p>
 
             {/* Segmented Tab Switcher */}
@@ -340,7 +346,7 @@ function LoginContent() {
                     : "text-slate-500 hover:text-slate-900"
                 )}
               >
-                Đăng Nhập
+                {tr("Đăng Nhập")}
               </button>
               <button
                 type="button"
@@ -352,7 +358,7 @@ function LoginContent() {
                     : "text-slate-500 hover:text-slate-900"
                 )}
               >
-                Đăng Ký Mới
+                {tr("Đăng Ký Mới")}
               </button>
             </div>
           </div>
@@ -393,7 +399,7 @@ function LoginContent() {
               >
                 <div className="space-y-1.5">
                   <Label htmlFor="login-email" className="text-slate-700 font-bold text-xs uppercase tracking-wider">
-                    Email Tài Khoản
+                    {tr("Email Tài Khoản")}
                   </Label>
                   <div className="relative">
                     <Mail className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
@@ -412,10 +418,10 @@ function LoginContent() {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="login-password" className="text-slate-700 font-bold text-xs uppercase tracking-wider">
-                      Mật Khẩu
+                      {tr("Mật Khẩu")}
                     </Label>
                     <Link href="#" className="text-xs font-bold text-blue-600 hover:text-blue-700">
-                      Quên mật khẩu?
+                      {tr("Quên mật khẩu?")}
                     </Link>
                   </div>
                   <div className="relative">
@@ -437,7 +443,7 @@ function LoginContent() {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl py-6 text-base font-bold shadow-lg shadow-blue-500/25 border-none mt-2" 
                 >
-                  {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Đăng Nhập'}
+                  {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : tr("Đăng Nhập")}
                 </Button>
               </motion.form>
             ) : (
@@ -453,7 +459,7 @@ function LoginContent() {
                 {/* Role Selection Cards */}
                 <div>
                   <Label className="text-slate-700 font-bold text-xs uppercase tracking-wider block mb-2">
-                    Chọn Vai Trò Của Bạn:
+                    {tr("Chọn Vai Trò Của Bạn:")}
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
                     {/* Role Teacher */}
@@ -472,8 +478,8 @@ function LoginContent() {
                       )}>
                         <GraduationCap className="w-5 h-5" />
                       </div>
-                      <span className="font-extrabold text-sm">Giáo Viên</span>
-                      <span className="text-[10px] text-slate-500 font-medium">Soạn đề & Quản lý lớp</span>
+                      <span className="font-extrabold text-sm">{tr("Giáo Viên")}</span>
+                      <span className="text-[10px] text-slate-500 font-medium">{tr("Soạn đề & Quản lý lớp")}</span>
                     </div>
 
                     {/* Role Student */}
@@ -492,8 +498,8 @@ function LoginContent() {
                       )}>
                         <UserCheck className="w-5 h-5" />
                       </div>
-                      <span className="font-extrabold text-sm">Học Sinh</span>
-                      <span className="text-[10px] text-slate-500 font-medium">Làm bài & Theo dõi Radar</span>
+                      <span className="font-extrabold text-sm">{tr("Học Sinh")}</span>
+                      <span className="text-[10px] text-slate-500 font-medium">{tr("Làm bài & Theo dõi Radar")}</span>
                     </div>
                   </div>
                 </div>
@@ -501,14 +507,14 @@ function LoginContent() {
                 {/* Full Name */}
                 <div className="space-y-1.5">
                   <Label htmlFor="signup-name" className="text-slate-700 font-bold text-xs uppercase tracking-wider">
-                    Họ và Tên
+                    {tr("Họ và Tên")}
                   </Label>
                   <div className="relative">
                     <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
                     <Input
                       id="signup-name"
                       type="text"
-                      placeholder={selectedRole === 'teacher' ? 'Ví dụ: Thầy Nguyễn Văn A' : 'Ví dụ: Nguyễn Văn Học'}
+                      placeholder={selectedRole === 'teacher' ? tr("Ví dụ: Thầy Nguyễn Văn A") : tr("Ví dụ: Nguyễn Văn Học")}
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
@@ -520,7 +526,7 @@ function LoginContent() {
                 {/* Email */}
                 <div className="space-y-1.5">
                   <Label htmlFor="signup-email" className="text-slate-700 font-bold text-xs uppercase tracking-wider">
-                    Email Đăng Ký
+                    {tr("Email Đăng Ký")}
                   </Label>
                   <div className="relative">
                     <Mail className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
@@ -539,7 +545,7 @@ function LoginContent() {
                 {/* Password */}
                 <div className="space-y-1.5">
                   <Label htmlFor="signup-password" className="text-slate-700 font-bold text-xs uppercase tracking-wider">
-                    Mật Khẩu (Tối thiểu 6 ký tự)
+                    {tr("Mật Khẩu (Tối thiểu 6 ký tự)")}
                   </Label>
                   <div className="relative">
                     <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
@@ -558,7 +564,7 @@ function LoginContent() {
                 {/* Confirm Password */}
                 <div className="space-y-1.5">
                   <Label htmlFor="signup-confirm-password" className="text-slate-700 font-bold text-xs uppercase tracking-wider">
-                    Nhập Lại Mật Khẩu
+                    {tr("Nhập Lại Mật Khẩu")}
                   </Label>
                   <div className="relative">
                     <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
@@ -576,7 +582,7 @@ function LoginContent() {
                     />
                   </div>
                   {confirmPassword && confirmPassword !== password && (
-                    <p className="text-[11px] font-bold text-rose-500 mt-1">Mật khẩu nhập lại chưa trùng khớp</p>
+                    <p className="text-[11px] font-bold text-rose-500 mt-1">{tr("Mật khẩu nhập lại chưa trùng khớp")}</p>
                   )}
                 </div>
 
@@ -590,7 +596,7 @@ function LoginContent() {
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   ) : (
                     <>
-                      <span>Đăng Ký Tài Khoản {selectedRole === 'teacher' ? 'Giáo Viên' : 'Học Sinh'}</span>
+                      <span>{tr("Đăng Ký Tài Khoản")} {selectedRole === 'teacher' ? tr("Giáo Viên") : tr("Học Sinh")}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

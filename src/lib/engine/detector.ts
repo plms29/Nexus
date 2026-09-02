@@ -1,4 +1,5 @@
 import { WorkmapEntry, SubjectGroup } from './types';
+import { fill, translate, type Lang } from '../i18n/translate';
 import { MAX_LU_PER_DAY, MAX_LU_PER_WEEK, calculateLU } from './calculator';
 
 // Ban chính của lớp chiếm 70% quỹ LU tuần, ban còn lại 30%
@@ -97,7 +98,8 @@ export interface WeeklyQuotaResult {
   reason: string;
 }
 
-const groupLabel = (group: SubjectGroup) => (group === 'natural' ? 'tự nhiên' : 'xã hội');
+const groupLabel = (group: SubjectGroup, lang: Lang = 'vi') =>
+  translate(group === 'natural' ? 'tự nhiên' : 'xã hội', lang);
 
 /**
  * Kiểm tra cân đối 70/30 giữa hai nhóm môn trên TỔNG LU CỦA CẢ TUẦN (không áp cho từng ngày).
@@ -113,7 +115,8 @@ export const checkWeeklyQuota = (
   weekDates: string[],
   existingEntries: WorkmapEntry[],
   newEntries: WorkmapEntry[],
-  orientation: SubjectGroup = 'natural'
+  orientation: SubjectGroup = 'natural',
+  lang: Lang = 'vi'
 ): WeeklyQuotaResult => {
   const allEntries = [...existingEntries, ...newEntries].filter(e => weekDates.includes(e.date));
 
@@ -197,25 +200,47 @@ export const checkWeeklyQuota = (
     const usedLU = overloadedGroup === orientation ? primaryLU : secondaryLU;
     const quotaLU = overloadedGroup === orientation ? PRIMARY_GROUP_QUOTA_LU : SECONDARY_GROUP_QUOTA_LU;
     const quotaPercent = Math.round((quotaLU / MAX_LU_PER_WEEK) * 100);
-    reason =
-      `Nhóm môn ${groupLabel(overloadedGroup)} đã dùng ${usedLU.toFixed(1)}/${quotaLU.toFixed(1)} LU ` +
-      `(quỹ ${quotaPercent}% của ${MAX_LU_PER_WEEK} LU tuần), vượt ${excessLU.toFixed(1)} LU ` +
-      `so với tỷ lệ 70/30 của lớp ban ${groupLabel(orientation)}.`;
+    reason = fill(
+      'Nhóm môn {group} đã dùng {used}/{quota} LU (quỹ {percent}% của {cap} LU tuần), vượt {excess} LU so với tỷ lệ 70/30 của lớp ban {orientation}.',
+      {
+        group: groupLabel(overloadedGroup, lang),
+        used: usedLU.toFixed(1),
+        quota: quotaLU.toFixed(1),
+        percent: quotaPercent,
+        cap: MAX_LU_PER_WEEK,
+        excess: excessLU.toFixed(1),
+        orientation: groupLabel(orientation, lang),
+      },
+      lang
+    );
   } else if (status === 'ratio_deviation') {
     const deviatingGroup = primaryRatio < PRIMARY_GROUP_RATIO ? secondaryGroup : orientation;
     const deviatingRatio = deviatingGroup === 'natural' ? base.ratioNatural : base.ratioSocial;
-    reason =
-      `Tuần đã có ${totalLU.toFixed(1)}/${MAX_LU_PER_WEEK} LU và nhóm môn ${groupLabel(deviatingGroup)} ` +
-      `đang chiếm ${Math.round(deviatingRatio * 100)}%, lệch khỏi tỷ lệ 70/30 của lớp ban ` +
-      `${groupLabel(orientation)}. Nên cân nhắc dời bớt sang nhóm môn còn lại.`;
+    reason = fill(
+      'Tuần đã có {total}/{cap} LU và nhóm môn {group} đang chiếm {ratio}%, lệch khỏi tỷ lệ 70/30 của lớp ban {orientation}. Nên cân nhắc dời bớt sang nhóm môn còn lại.',
+      {
+        total: totalLU.toFixed(1),
+        cap: MAX_LU_PER_WEEK,
+        group: groupLabel(deviatingGroup, lang),
+        ratio: Math.round(deviatingRatio * 100),
+        orientation: groupLabel(orientation, lang),
+      },
+      lang
+    );
   } else if (status === 'insufficient_data') {
-    reason =
-      `Tuần mới có ${totalLU.toFixed(1)}/${MAX_LU_PER_WEEK} LU — chưa đủ tải để đánh giá tỷ lệ 70/30. ` +
-      `Hệ thống chỉ theo dõi, chưa cảnh báo.`;
+    reason = fill(
+      'Tuần mới có {total}/{cap} LU — chưa đủ tải để đánh giá tỷ lệ 70/30. Hệ thống chỉ theo dõi, chưa cảnh báo.',
+      { total: totalLU.toFixed(1), cap: MAX_LU_PER_WEEK },
+      lang
+    );
   }
 
   if (exceedsWeeklyCap) {
-    reason = `${reason ? reason + ' ' : ''}Tổng tải tuần ${totalLU.toFixed(1)} LU đã vượt ngưỡng khuyến nghị ${MAX_LU_PER_WEEK} LU.`;
+    reason = (reason ? reason + ' ' : '') + fill(
+      'Tổng tải tuần {total} LU đã vượt ngưỡng khuyến nghị {cap} LU.',
+      { total: totalLU.toFixed(1), cap: MAX_LU_PER_WEEK },
+      lang
+    );
   }
 
   return {

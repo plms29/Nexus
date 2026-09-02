@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { translate, type Lang } from '@/lib/i18n/translate';
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || '');
@@ -29,7 +30,9 @@ const stripMinutesFromName = (name: string): string =>
 
 export async function POST(req: Request) {
   try {
-    const { title, topic, subject = 'Ngữ văn', classId = '10A', language, taskType = 'essay' } = await req.json();
+    const { title, topic, subject = 'Ngữ văn', classId = '10A', language, taskType = 'essay', lang = 'vi' } = await req.json();
+    const uiLang: Lang = lang === 'en' ? 'en' : 'vi';
+    const t = (text: string) => translate(text, uiLang);
 
     const isForeignLang = 
       (language && language.toLowerCase().includes('anh')) ||
@@ -52,7 +55,14 @@ export async function POST(req: Request) {
         };
         const taskTypeLabel = taskTypeLabels[taskType] || 'VIẾT BÀI ESSAY';
 
+        // Giao diện tiếng Anh thì kế hoạch AI cũng phải là tiếng Anh, nếu không giáo viên
+        // nhận về một bảng bước làm bài lẫn hai thứ tiếng.
+        const outputLanguageRule = uiLang === 'en'
+          ? 'IMPORTANT: write every "stepName", "note" and outline "text" in ENGLISH.'
+          : 'Viết toàn bộ "stepName", "note" và "text" của dàn ý bằng TIẾNG VIỆT.';
+
         const prompt = `
+        ${outputLanguageRule}
         Bạn là Trợ lý Giáo dục AI (ExamLoad Radar).
         Nhiệm vụ: Phân tích độ khó & tính thời gian LÀM BÀI TẬP THPT (${taskTypeLabel}) thực tế (TỔNG THỜI GIAN KHÔNG VƯỢT QUÁ 180 PHÚT):
 
@@ -106,7 +116,7 @@ export async function POST(req: Request) {
             steps: sanitizedSteps,
             outline: parsed.outline,
             totalMinutes,
-            languageNotes: parsed.languageNotes || (isForeignLang ? 'Bài Tiếng Anh thêm thời gian từ vựng & ngữ pháp.' : 'Thời gian phân bổ theo chuẩn năng lực THPT.')
+            languageNotes: parsed.languageNotes || (isForeignLang ? t('Bài Tiếng Anh thêm thời gian từ vựng & ngữ pháp.') : t('Thời gian phân bổ theo chuẩn năng lực THPT.'))
           });
         }
       } catch (err) {
@@ -119,7 +129,7 @@ export async function POST(req: Request) {
     let steps: ProcessStep[] = [];
     let outline: OutlineItem[] = [];
 
-    const safeTitle = title || 'Bài tập rèn luyện tư học và kỹ năng';
+    const safeTitle = title || t('Bài tập rèn luyện tư học và kỹ năng');
 
     if (taskType === 'chart') {
       steps = [
@@ -131,7 +141,7 @@ export async function POST(req: Request) {
         { id: 'p6', stepName: 'Rà soát, kiểm tra độ chính xác và hoàn thiện', minutes: 10, note: 'Kiểm tra khớp số liệu và tên biểu đồ' },
       ];
       outline = [
-        { id: 'o1', text: `1. Tên biểu đồ: ${safeTitle} - Tóm tắt mục tiêu thể hiện số liệu` },
+        { id: 'o1', text: `${t('1. Tên biểu đồ:')} ${safeTitle} ${t('- Tóm tắt mục tiêu thể hiện số liệu')}` },
         { id: 'o2', text: '2. Bảng số liệu đã xử lý & đơn vị tính chính xác' },
         { id: 'o3', text: '3. Dạng biểu đồ lựa chọn (Cột, Đường, Tròn, Kết hợp...) & Lý do lựa chọn' },
         { id: 'o4', text: '4. Nhận xét tổng quan: Đánh giá xu hướng chung, nhận xét khái quát' },
@@ -146,7 +156,7 @@ export async function POST(req: Request) {
         { id: 'p4', stepName: 'Đánh giá, hoàn thiện và chuẩn bị báo cáo/thuyết trình', minutes: 30, note: 'Tổng duyệt sản phẩm và tập luyện thuyết trình' },
       ];
       outline = [
-        { id: 'o1', text: `1. Mục tiêu & Phạm vi thực hiện dự án: ${safeTitle}` },
+        { id: 'o1', text: `${t('1. Mục tiêu & Phạm vi thực hiện dự án:')} ${safeTitle}` },
         { id: 'o2', text: '2. Kế hoạch phân công công việc & Tiến độ chi tiết' },
         { id: 'o3', text: '3. Nội dung thu thập & Kết quả nghiên cứu thực tế' },
         { id: 'o4', text: '4. Tổng kết sản phẩm, bài học kinh nghiệm & Đánh giá kết quả' }
@@ -162,7 +172,7 @@ export async function POST(req: Request) {
         { id: 'p5', stepName: isLong ? 'Rà soát, bổ sung liên kết giữa các nhánh' : 'Kiểm tra lại', minutes: Math.round(5 * scale), note: 'Đối chiếu với sách giáo khoa xem đã đủ ý chưa' },
       ];
       outline = [
-        { id: 'o1', text: `1. Chủ đề trung tâm: ${safeTitle}` },
+        { id: 'o1', text: `${t('1. Chủ đề trung tâm:')} ${safeTitle}` },
         { id: 'o2', text: '2. Các nhánh chính (mỗi nhánh là một đơn vị kiến thức lớn)' },
         { id: 'o3', text: '3. Nhánh phụ và từ khoá cho từng nhánh chính' },
         { id: 'o4', text: '4. Ví dụ hoặc công thức minh hoạ gắn với từng nhánh' },
@@ -185,7 +195,7 @@ export async function POST(req: Request) {
           : []),
       ];
       outline = [
-        { id: 'o1', text: `1. Mở đầu: Giới thiệu chủ đề "${safeTitle}" và thông điệp chính` },
+        { id: 'o1', text: `${t('1. Mở đầu: Giới thiệu chủ đề')} "${safeTitle}" ${t('và thông điệp chính')}` },
         { id: 'o2', text: '2. Bối cảnh và lý do chủ đề này đáng quan tâm' },
         { id: 'o3', text: '3. Nội dung trọng tâm 1 kèm dẫn chứng cụ thể' },
         { id: 'o4', text: '4. Nội dung trọng tâm 2 kèm số liệu hoặc ví dụ' },
@@ -207,7 +217,7 @@ export async function POST(req: Request) {
         { id: 'p7', stepName: 'Tổng hợp lại các tài liệu tham khảo (Trình bày link)', minutes: 5, note: 'Liệt kê danh mục tài liệu tham khảo theo đúng chuẩn' },
       ];
       outline = [
-        { id: 'o1', text: `Mở bài: Dẫn dắt vấn đề về "${safeTitle}" và nêu nhận định chung định hướng.` },
+        { id: 'o1', text: `${t('Mở bài: Dẫn dắt vấn đề về')} "${safeTitle}" ${t('và nêu nhận định chung định hướng.')}` },
         { id: 'o2', text: `Thân bài - Giải thích khái niệm: Làm rõ bản chất và phạm vi của bài viết.` },
         { id: 'o3', text: `Thân bài - Phân tích thực trạng: Chỉ ra cơ hội và thách thức thực tế.` },
         { id: 'o4', text: `Thân bài - Vai trò và ý nghĩa: Đánh giá tác động đến cá nhân và cộng đồng.` },
@@ -219,14 +229,18 @@ export async function POST(req: Request) {
 
     const totalMinutes = steps.reduce((acc, s) => acc + s.minutes, 0);
 
+    // Bộ sinh dự phòng viết bằng tiếng Việt; dịch trước khi trả về nếu UI đang dùng tiếng Anh.
+    steps = steps.map(st => ({ ...st, stepName: t(st.stepName), note: t(st.note) }));
+    outline = outline.map(o => ({ ...o, text: t(o.text) }));
+
     return NextResponse.json({
       success: true,
       steps,
       outline,
       totalMinutes,
-      languageNotes: isForeignLang 
-        ? 'Dự báo học sinh làm bài bằng Tiếng Anh: Tăng thêm ~30% thời gian cho khâu chọn từ vựng, kiểm tra ngữ pháp và liên kết đoạn.' 
-        : 'Phân bổ thời gian chuẩn bám sát khung năng lực THPT.'
+      languageNotes: isForeignLang
+        ? t('Dự báo học sinh làm bài bằng Tiếng Anh: Tăng thêm ~30% thời gian cho khâu chọn từ vựng, kiểm tra ngữ pháp và liên kết đoạn.')
+        : t('Phân bổ thời gian chuẩn bám sát khung năng lực THPT.')
     });
 
   } catch (error: any) {

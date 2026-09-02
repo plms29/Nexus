@@ -1,4 +1,5 @@
 'use client';
+import { useTranslate } from '@/lib/i18n';
 import React, { useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { format, addDays, isToday } from 'date-fns';
@@ -58,6 +59,7 @@ interface WorkmapCalendarProps {
 }
 
 export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => {
+  const tr = useTranslate();
   const { workmap, tasks, selectedDate, setSelectedDate, classes } = useStore();
 
   // State for view mode: 3, 4, or 7 days (default 4 days for clean readable text)
@@ -96,9 +98,9 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
 
   const getTaskInfo = (entry: WorkmapEntry) => {
     const task = tasks.find(t => t.id === entry.task_id);
-    const subjectName = formatSubjectName(task?.subject_id);
-    const taskTitle = task?.title || (entry.step_name && !entry.step_name.includes('-') ? entry.step_name : 'Bài tập');
-    const stepName = entry.step_name && entry.step_name !== taskTitle ? entry.step_name : null;
+    const subjectName = tr(formatSubjectName(task?.subject_id));
+    const taskTitle = tr(task?.title || (entry.step_name && !entry.step_name.includes('-') ? entry.step_name : 'Bài tập'));
+    const stepName = entry.step_name && tr(entry.step_name) !== taskTitle ? tr(entry.step_name) : null;
     return { task, subjectName, taskTitle, stepName };
   };
 
@@ -117,11 +119,11 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                 <BookOpen className="w-4 h-4" />
               </div>
               <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                Dự Báo Workmap & Tải Học Tập
+                {tr("Dự Báo Workmap & Tải Học Tập")}
               </h2>
             </div>
             <p className="text-xs font-semibold text-slate-500">
-              Theo dõi môn học, tiến độ và tải học tập (LU). Giới hạn tối đa <span className="font-extrabold text-blue-600">5.0 LU/ngày</span>.
+              {tr("Theo dõi môn học, tiến độ và tải học tập (LU). Giới hạn tối đa")} <span className="font-extrabold text-blue-600">{tr("5.0 LU/ngày")}</span>.
             </p>
           </div>
 
@@ -140,7 +142,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                       : "text-slate-500 hover:text-slate-900"
                   )}
                 >
-                  {count} Ngày
+                  {tr(`${count} Ngày`)}
                 </button>
               ))}
             </div>
@@ -151,7 +153,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                 type="button"
                 onClick={() => setStartDateOffset(prev => prev - visibleDaysCount)}
                 className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-sm transition-all cursor-pointer"
-                title="Trang trước"
+                title={tr("Trang trước")}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -160,13 +162,13 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                 onClick={() => setStartDateOffset(0)}
                 className="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-xs transition-colors border border-blue-200/60 cursor-pointer"
               >
-                Hôm nay
+                {tr("Hôm nay")}
               </button>
               <button
                 type="button"
                 onClick={() => setStartDateOffset(prev => prev + visibleDaysCount)}
                 className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-sm transition-all cursor-pointer"
-                title="Trang sau"
+                title={tr("Trang sau")}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -178,7 +180,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
               onClick={() => setIsModalOpen(true)}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
-              <Maximize2 className="w-3.5 h-3.5" /> Mở rộng Workmap
+              <Maximize2 className="w-3.5 h-3.5" /> {tr("Mở rộng Workmap")}
             </button>
           </div>
         </div>
@@ -198,7 +200,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
               const totalLU = entries.reduce((sum, e) => sum + e.lu, 0);
               const isOverloaded = totalLU > MAX_LU_PER_DAY;
               const isSelected = selectedDate === dateStr;
-              const dayNameVN = getVietnameseDayName(dateObj, isSevenDays);
+              const dayNameVN = tr(getVietnameseDayName(dateObj, isSevenDays));
               const isCurrentToday = isToday(dateObj);
 
               return (
@@ -224,7 +226,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                           </span>
                           {isCurrentToday && (
                             <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-blue-600 text-white shrink-0">
-                              Hôm nay
+                              {tr("Hôm nay")}
                             </span>
                           )}
                         </div>
@@ -243,12 +245,12 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                             ? "bg-amber-100 text-amber-800 border-amber-200"
                             : "bg-emerald-100 text-emerald-800 border-emerald-200"
                         )}
-                        title={isOverloaded ? 'Quá tải' : totalLU > 3.5 ? 'Vừa phải' : 'An toàn'}
+                        title={isOverloaded ? tr("Quá tải") : totalLU > 3.5 ? tr("Vừa phải") : tr("An toàn")}
                       >
                         {isSevenDays ? (
-                          isOverloaded ? 'Quá tải' : totalLU > 3.5 ? 'Vừa' : 'An toàn'
+                          isOverloaded ? tr("Quá tải") : totalLU > 3.5 ? tr("Vừa") : tr("An toàn")
                         ) : (
-                          isOverloaded ? 'Quá tải' : totalLU > 3.5 ? 'Vừa phải' : 'An toàn'
+                          isOverloaded ? tr("Quá tải") : totalLU > 3.5 ? tr("Vừa phải") : tr("An toàn")
                         )}
                       </div>
                     </div>
@@ -256,7 +258,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                     {/* LU Counter & Progress Bar */}
                     <div className={clsx("mb-3 bg-slate-50/90 rounded-xl border border-slate-100 w-full min-w-0", isSevenDays ? "p-2" : "p-3")}>
                       <div className="flex items-baseline justify-between mb-1 min-w-0">
-                        <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider truncate">Tải:</span>
+                        <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider truncate">{tr("Tải:")}</span>
                         <span className={clsx(
                           "font-black font-sans tracking-tight shrink-0",
                           isSevenDays ? "text-sm" : "text-xl",
@@ -280,12 +282,12 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                     {/* Tasks List (100% Overflow-Safe Stacked Layout) */}
                     <div className="space-y-1.5 min-h-[85px] w-full min-w-0">
                       <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 truncate">
-                        <span>Môn & Bài ({entries.length})</span>
+                        <span>{tr("Môn & Bài (")}{entries.length})</span>
                       </div>
 
                       {entries.length === 0 ? (
                         <div className="text-[11px] text-slate-400 italic bg-slate-50/50 p-2 rounded-xl text-center border border-dashed border-slate-200 truncate">
-                          Không có bài tập
+                          {tr("Không có bài tập")}
                         </div>
                       ) : (
                         entries.map((entry, idx) => {
@@ -321,7 +323,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                                   className="text-[9px] font-extrabold text-blue-600 bg-blue-50/80 px-1.5 py-0.5 rounded truncate w-full"
                                   title={stepName}
                                 >
-                                  Bước: {stepName}
+                                  {tr("Bước:")} {stepName}
                                 </div>
                               )}
                             </div>
@@ -340,7 +342,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                     }}
                     className="mt-3 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer w-full min-w-0"
                   >
-                    <span className="truncate">Chi tiết</span>
+                    <span className="truncate">{tr("Chi tiết")}</span>
                     <ChevronRight className="w-3 h-3 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </div>
@@ -379,10 +381,10 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                   </div>
                   <div>
                     <h3 className="text-xl font-black tracking-tight text-white">
-                      Chi Tiết Workmap & Lịch Phân Bổ Tải Học Tập
+                      {tr("Chi Tiết Workmap & Lịch Phân Bổ Tải Học Tập")}
                     </h3>
                     <p className="text-xs text-blue-200 font-medium">
-                      Xem toàn bộ môn học, bài tập được giao và theo dõi chỉ số tải LU theo từng ngày.
+                      {tr("Xem toàn bộ môn học, bài tập được giao và theo dõi chỉ số tải LU theo từng ngày.")}
                     </p>
                   </div>
                 </div>
@@ -401,42 +403,42 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-slate-500" />
-                    <span className="text-xs font-bold text-slate-700 uppercase">Lọc theo lớp:</span>
+                    <span className="text-xs font-bold text-slate-700 uppercase">{tr("Lọc theo lớp:")}</span>
                     <select
                       value={modalFilterClass}
                       onChange={e => setModalFilterClass(e.target.value)}
                       className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                     >
-                      <option value="all">Tất cả các lớp</option>
+                      <option value="all">{tr("Tất cả các lớp")}</option>
                       {classes?.map((c: string) => (
-                        <option key={c} value={c}>Lớp {c}</option>
+                        <option key={c} value={c}>{tr("Lớp")} {c}</option>
                       ))}
                     </select>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700 uppercase">Khoảng thời gian:</span>
+                    <span className="text-xs font-bold text-slate-700 uppercase">{tr("Khoảng thời gian:")}</span>
                     <select
                       value={modalRangeDays}
                       onChange={e => setModalRangeDays(Number(e.target.value))}
                       className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                     >
-                      <option value={7}>7 ngày tới</option>
-                      <option value={14}>14 ngày tới</option>
-                      <option value={30}>30 ngày tới</option>
+                      <option value={7}>{tr("7 ngày tới")}</option>
+                      <option value={14}>{tr("14 ngày tới")}</option>
+                      <option value={30}>{tr("30 ngày tới")}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="text-xs font-bold text-slate-500 flex items-center gap-4">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500" /> An toàn (&lt;3.5 LU)
+                    <span className="w-3 h-3 rounded-full bg-emerald-500" /> {tr("An toàn (<3.5 LU)")}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-amber-500" /> Vừa phải (3.5-5 LU)
+                    <span className="w-3 h-3 rounded-full bg-amber-500" /> {tr("Vừa phải (3.5-5 LU)")}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-rose-500" /> Quá tải (&gt;5 LU)
+                    <span className="w-3 h-3 rounded-full bg-rose-500" /> {tr("Quá tải (>5 LU)")}
                   </span>
                 </div>
               </div>
@@ -470,16 +472,16 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="text-base font-extrabold text-slate-900">
-                                {getVietnameseDayName(dObj, false)}, {format(dObj, 'dd/MM/yyyy')}
+                                {tr(getVietnameseDayName(dObj, false))}, {format(dObj, 'dd/MM/yyyy')}
                               </h4>
                               {isToday(dObj) && (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-600 text-white">
-                                  Hôm nay
+                                  {tr("Hôm nay")}
                                 </span>
                               )}
                             </div>
                             <p className="text-xs text-slate-500 font-medium">
-                              Số môn giao: {entries.length} bài tập • Tổng thời gian: {entries.reduce((sum, e) => sum + e.minutes, 0)} phút
+                              {tr("Số môn giao:")} {entries.length} {tr("bài tập • Tổng thời gian:")} {entries.reduce((sum, e) => sum + e.minutes, 0)} {tr("phút")}
                             </p>
                           </div>
                         </div>
@@ -487,7 +489,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                         {/* LU Badge & Progress */}
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <div className="text-xs text-slate-400 font-bold uppercase">Tổng LU ngày</div>
+                            <div className="text-xs text-slate-400 font-bold uppercase">{tr("Tổng LU ngày")}</div>
                             <div className={clsx(
                               "text-xl font-black font-sans",
                               isOverloaded ? "text-rose-600" : "text-blue-600"
@@ -507,11 +509,11 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                             )}
                           >
                             {isOverloaded ? (
-                              <><AlertTriangle className="w-4 h-4 text-rose-600" /> Cảnh Báo Quá Tải</>
+                              <><AlertTriangle className="w-4 h-4 text-rose-600" /> {tr("Cảnh Báo Quá Tải")}</>
                             ) : totalLU > 3.5 ? (
-                              'Tải Vừa Phải'
+                              tr("Tải Vừa Phải")
                             ) : (
-                              <><CheckCircle2 className="w-4 h-4 text-emerald-600" /> Tải An Toàn</>
+                              <><CheckCircle2 className="w-4 h-4 text-emerald-600" /> {tr("Tải An Toàn")}</>
                             )}
                           </div>
                         </div>
@@ -520,7 +522,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                       {/* Entries Table / List */}
                       {entries.length === 0 ? (
                         <div className="text-xs font-semibold text-slate-400 italic py-3 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                          Không có bài tập nào giao trong ngày này.
+                          {tr("Không có bài tập nào giao trong ngày này.")}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -539,7 +541,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                                       {subjectName}
                                     </span>
                                     <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
-                                      {entry.lu.toFixed(1)} LU ({entry.minutes} phút)
+                                      {entry.lu.toFixed(1)} LU ({entry.minutes} {tr("phút)")}
                                     </span>
                                   </div>
 
@@ -550,17 +552,17 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                                   {stepName && (
                                     <div className="text-xs font-bold text-slate-600 mt-1 flex items-center gap-1">
                                       <Layers className="w-3.5 h-3.5 text-blue-500" />
-                                      <span>Bước thực hiện: <strong className="text-blue-700">{stepName}</strong></span>
+                                      <span>{tr("Bước thực hiện:")} <strong className="text-blue-700">{stepName}</strong></span>
                                     </div>
                                   )}
                                 </div>
 
                                 <div className="flex items-center justify-between text-xs text-slate-500 font-semibold pt-2 border-t border-slate-200/60">
-                                  <span>Lớp: <strong className="text-slate-800">{task?.class_id || classId || '10A'}</strong></span>
+                                  <span>{tr("Lớp:")} <strong className="text-slate-800">{task?.class_id || classId || '10A'}</strong></span>
                                   {task?.deadline && (
                                     <span className="flex items-center gap-1 text-slate-600">
                                       <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                      Hạn nộp: {format(new Date(task.deadline), 'dd/MM/yyyy')}
+                                      {tr("Hạn nộp:")} {format(new Date(task.deadline), 'dd/MM/yyyy')}
                                     </span>
                                   )}
                                 </div>
@@ -577,14 +579,14 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
               {/* Modal Footer */}
               <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between shrink-0">
                 <div className="text-xs font-bold text-slate-500">
-                  ExamLoad Radar • Hệ thống tự động cân bằng tải cho Giáo viên & Học sinh
+                  {tr("ExamLoad Radar • Hệ thống tự động cân bằng tải cho Giáo viên & Học sinh")}
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition-colors cursor-pointer"
                 >
-                  Đóng Workmap
+                  {tr("Đóng Workmap")}
                 </button>
               </div>
             </motion.div>
