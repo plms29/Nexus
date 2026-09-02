@@ -1,4 +1,5 @@
 import { EN } from './dictionary';
+import { EN_DATA } from './dataset';
 
 export type Lang = 'vi' | 'en';
 
@@ -15,10 +16,19 @@ function normalize(text: string) {
 export function translate(text: string, lang: Lang): string {
   if (lang === 'vi' || !text) return text;
   const key = normalize(text);
-  const hit = EN[key];
+  const hit = EN[key] ?? EN_DATA[key];
   if (hit === undefined) return text;
   // Giữ nguyên khoảng trắng đầu/cuối của chuỗi gốc (quan trọng với text JSX).
   const lead = text.match(/^\s*/)?.[0] ?? '';
   const trail = text.match(/\s*$/)?.[0] ?? '';
   return lead + hit + trail;
+}
+
+/**
+ * Dịch một câu mẫu rồi thay các chỗ trống `{ten}` bằng giá trị thực.
+ * Dùng cho các câu do engine sinh ra, vì trật tự từ tiếng Anh khác tiếng Việt
+ * nên không thể ghép từng mảnh rời.
+ */
+export function fill(template: string, vars: Record<string, string | number>, lang: Lang): string {
+  return translate(template, lang).replace(/\{(\w+)\}/g, (_, key) => String(vars[key] ?? ''));
 }

@@ -93,7 +93,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
           <div className="mt-auto absolute bottom-8 left-8 right-8">
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
               <p className="text-slate-600 text-xs italic leading-relaxed">
-                {tr("&quot;Dưới ánh mặt trời không có nghề nào cao quý hơn nghề dạy học.&quot;")}
+                {tr("\"Dưới ánh mặt trời không có nghề nào cao quý hơn nghề dạy học.\"")}
               </p>
               <p className="text-slate-500 text-[10px] text-right mt-2">— Comenius</p>
             </div>

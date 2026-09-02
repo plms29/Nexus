@@ -1,5 +1,5 @@
 'use client';
-import { useTranslate, useDateLocale } from '@/lib/i18n';
+import { useTranslate, useDateLocale, useLanguage } from '@/lib/i18n';
 import React, { useMemo, useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { TaskType, WorkmapEntry } from '@/lib/engine/types';
@@ -88,6 +88,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
 }) => {
   const tr = useTranslate();
   const dateLocale = useDateLocale();
+  const lang = useLanguage(s => s.lang);
   const { workmap, tasks } = useStore();
 
   // Override Audit Log Modal State
@@ -130,8 +131,8 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
       const items = classEntries.map(e => {
         const t = tasks.find(tk => tk.id === e.task_id);
         return {
-          subject: formatSubjectName(t?.subject_id),
-          title: t?.title || e.step_name || 'Bài tập khác',
+          subject: tr(formatSubjectName(t?.subject_id)),
+          title: tr(t?.title || e.step_name || 'Bài tập khác'),
           lu: e.lu,
           min: Number(e.minutes) || Math.round(e.lu * 30)
         };
@@ -266,16 +267,16 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
     );
 
     return {
-      ...checkWeeklyQuota(weekDates, existingEntries, newEntries, getClassOrientation(classId)),
+      ...checkWeeklyQuota(weekDates, existingEntries, newEntries, getClassOrientation(classId), lang),
       orientation: getClassOrientation(classId),
       subjectGroup,
     };
-  }, [isOpen, previewSchedule, workmap, tasks, taskData.classId, taskData.subjectId]);
+  }, [isOpen, previewSchedule, workmap, tasks, taskData.classId, taskData.subjectId, lang]);
 
   // Luật giao bài sau 19:00: hôm đó không còn là ngày làm bài hợp lệ
   const lateCheck = useMemo(
-    () => (isOpen ? checkLateAssignment(taskData.startDate, taskData.deadline) : null),
-    [isOpen, taskData.startDate, taskData.deadline]
+    () => (isOpen ? checkLateAssignment(taskData.startDate, taskData.deadline, new Date(), lang) : null),
+    [isOpen, taskData.startDate, taskData.deadline, lang]
   );
 
   // Vượt quỹ LU tuần của một nhóm môn (70/30) cũng là vi phạm phải trình bày với nhà trường
@@ -363,15 +364,15 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5 pt-4 border-t border-slate-100 text-xs">
               <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3 shadow-2xs">
                 <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{tr("Tên bài tập")}</div>
-                <div className="font-extrabold text-slate-900 truncate mt-0.5" title={taskData.title}>
-                  {taskData.title}
+                <div className="font-extrabold text-slate-900 truncate mt-0.5" title={tr(taskData.title)}>
+                  {tr(taskData.title)}
                 </div>
               </div>
 
               <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3 shadow-2xs">
                 <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{tr("Bộ môn & Dạng")}</div>
                 <div className="font-extrabold text-slate-900 truncate mt-0.5">
-                  {tr("Môn")} {formatSubjectName(taskData.subjectId)} • {tr(getTaskTypeLabel(taskData.type))}
+                  {tr("Môn")} {tr(formatSubjectName(taskData.subjectId))} • {tr(getTaskTypeLabel(taskData.type))}
                 </div>
               </div>
 
@@ -450,8 +451,8 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                     lateCheck.isDeadlineTooTight ? "text-rose-950" : "text-amber-950"
                   )}>
                     {lateCheck.isDeadlineTooTight
-                      ? `Giao Bài Quá Gấp Sau ${LATE_ASSIGNMENT_HOUR}:00!`
-                      : `Giao Bài Sau ${LATE_ASSIGNMENT_HOUR}:00 - Lịch Bắt Đầu Từ Ngày Mai`}
+                      ? `${tr("Giao Bài Quá Gấp Sau")} ${LATE_ASSIGNMENT_HOUR}:00!`
+                      : tr(`Giao Bài Sau ${LATE_ASSIGNMENT_HOUR}:00 - Lịch Bắt Đầu Từ Ngày Mai`)}
                   </h4>
                   <p className="font-semibold text-slate-600 leading-relaxed">
                     {lateCheck.reason}
@@ -545,12 +546,12 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-bold">
                   {([
                     {
-                      label: weeklyQuota.orientation === 'natural' ? 'Tự nhiên (nhóm chính)' : 'Xã hội (nhóm chính)',
+                      label: tr(weeklyQuota.orientation === 'natural' ? 'Tự nhiên (nhóm chính)' : 'Xã hội (nhóm chính)'),
                       used: weeklyQuota.primaryLU,
                       quota: weeklyQuota.primaryQuotaLU,
                     },
                     {
-                      label: weeklyQuota.orientation === 'natural' ? 'Xã hội (nhóm phụ)' : 'Tự nhiên (nhóm phụ)',
+                      label: tr(weeklyQuota.orientation === 'natural' ? 'Xã hội (nhóm phụ)' : 'Tự nhiên (nhóm phụ)'),
                       used: weeklyQuota.secondaryLU,
                       quota: weeklyQuota.secondaryQuotaLU,
                     },
@@ -758,7 +759,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                               <span className="font-extrabold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-md mr-2 text-[11px] shadow-2xs">
                                 {exItem.subject}
                               </span>
-                              <span className="font-extrabold text-slate-800">{exItem.title}</span>
+                              <span className="font-extrabold text-slate-800">{tr(exItem.title)}</span>
                               <span className="text-[11px] text-slate-400 font-medium italic ml-1.5">{tr("(Bài tập đã có)")}</span>
                             </div>
                           </div>
@@ -780,9 +781,9 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                             </div>
                             <div className="truncate">
                               <span className="font-extrabold text-blue-900 bg-white border border-blue-200 px-2 py-0.5 rounded-md mr-2 text-[11px] shadow-2xs">
-                                {tr("📌 Môn")} {formatSubjectName(taskData.subjectId)} {tr("(Đang giao)")}
+                                {tr("📌 Môn")} {tr(formatSubjectName(taskData.subjectId))} {tr("(Đang giao)")}
                               </span>
-                              <span className="font-black text-blue-950">{step.name}</span>
+                              <span className="font-black text-blue-950">{tr(step.name)}</span>
                             </div>
                           </div>
                           <span className="text-xs font-black text-blue-700 bg-white border border-blue-300 px-3 py-1 rounded-xl shrink-0 shadow-sm">

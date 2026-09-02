@@ -98,9 +98,9 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
 
   const getTaskInfo = (entry: WorkmapEntry) => {
     const task = tasks.find(t => t.id === entry.task_id);
-    const subjectName = formatSubjectName(task?.subject_id);
-    const taskTitle = task?.title || (entry.step_name && !entry.step_name.includes('-') ? entry.step_name : 'Bài tập');
-    const stepName = entry.step_name && entry.step_name !== taskTitle ? entry.step_name : null;
+    const subjectName = tr(formatSubjectName(task?.subject_id));
+    const taskTitle = tr(task?.title || (entry.step_name && !entry.step_name.includes('-') ? entry.step_name : 'Bài tập'));
+    const stepName = entry.step_name && tr(entry.step_name) !== taskTitle ? tr(entry.step_name) : null;
     return { task, subjectName, taskTitle, stepName };
   };
 
@@ -142,7 +142,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                       : "text-slate-500 hover:text-slate-900"
                   )}
                 >
-                  {count} {tr("Ngày")}
+                  {tr(`${count} Ngày`)}
                 </button>
               ))}
             </div>
@@ -168,7 +168,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                 type="button"
                 onClick={() => setStartDateOffset(prev => prev + visibleDaysCount)}
                 className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-sm transition-all cursor-pointer"
-                title="Trang sau"
+                title={tr("Trang sau")}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -200,7 +200,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
               const totalLU = entries.reduce((sum, e) => sum + e.lu, 0);
               const isOverloaded = totalLU > MAX_LU_PER_DAY;
               const isSelected = selectedDate === dateStr;
-              const dayNameVN = getVietnameseDayName(dateObj, isSevenDays);
+              const dayNameVN = tr(getVietnameseDayName(dateObj, isSevenDays));
               const isCurrentToday = isToday(dateObj);
 
               return (
@@ -432,13 +432,13 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
 
                 <div className="text-xs font-bold text-slate-500 flex items-center gap-4">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500" /> {tr("An toàn (&lt;3.5 LU)")}
+                    <span className="w-3 h-3 rounded-full bg-emerald-500" /> {tr("An toàn (<3.5 LU)")}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-amber-500" /> {tr("Vừa phải (3.5-5 LU)")}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-rose-500" /> {tr("Quá tải (&gt;5 LU)")}
+                    <span className="w-3 h-3 rounded-full bg-rose-500" /> {tr("Quá tải (>5 LU)")}
                   </span>
                 </div>
               </div>
@@ -472,7 +472,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="text-base font-extrabold text-slate-900">
-                                {getVietnameseDayName(dObj, false)}, {format(dObj, 'dd/MM/yyyy')}
+                                {tr(getVietnameseDayName(dObj, false))}, {format(dObj, 'dd/MM/yyyy')}
                               </h4>
                               {isToday(dObj) && (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-600 text-white">

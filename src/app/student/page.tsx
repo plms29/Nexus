@@ -177,7 +177,7 @@ export default function StudentWorkmap() {
           taskBlocks.push({
             id: `${entry.task_id}-${entry.step_name || idx}`,
             subject: task.subject_id || 'MÔN HỌC',
-            title: entry.step_name ? `${task.title} (${entry.step_name})` : task.title,
+            title: entry.step_name ? `${tr(task.title)} (${tr(entry.step_name)})` : tr(task.title),
             lu: roundedLu,
             minutes: Number(entry.minutes) || Math.round(rawLu * 30),
             color: task.subject_id === 'Ngữ văn' ? 'blue' : task.subject_id === 'Tiếng Anh' ? 'purple' : task.type === 'quiz' ? 'yellow' : 'teal',
@@ -539,7 +539,7 @@ export default function StudentWorkmap() {
                           </div>
 
                           <div className="font-extrabold text-sm leading-snug mb-3 line-clamp-2">
-                            {task.title}
+                            {tr(task.title)}
                           </div>
 
                           {quizRes && (
@@ -621,7 +621,7 @@ export default function StudentWorkmap() {
             >
               <option value="all">{tr("Tất cả loại bài tập")}</option>
               {TASK_TYPE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>{tr(opt.label)}</option>
               ))}
             </select>
 
@@ -682,7 +682,7 @@ export default function StudentWorkmap() {
 
                     <div>
                       <h3 className="font-extrabold text-base text-slate-900 leading-snug group-hover:text-indigo-600 transition-colors">
-                        {task.title}
+                        {tr(task.title)}
                       </h3>
                       <p className="text-xs text-slate-500 font-semibold mt-1 flex items-center gap-2">
                         <span>{tr("Lớp")} {task.class_id}</span>
@@ -705,7 +705,7 @@ export default function StudentWorkmap() {
                   <div className="pt-5 border-t border-slate-100 mt-4 flex items-center justify-between gap-3">
                     <span className="text-xs font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
                       {taskMinutes > 0
-                        ? `${calculateLU(taskMinutes)} LU (${taskMinutes} phút)`
+                        ? `${calculateLU(taskMinutes)} LU (${taskMinutes} ${tr("phút")})`
                         : tr("Chưa xếp lịch")}
                     </span>
 
@@ -819,7 +819,7 @@ export default function StudentWorkmap() {
                       </span>
                     </div>
                     <h2 className="text-xl font-black tracking-tight text-white mt-1">
-                      {selectedEssayTask.title}
+                      {tr(selectedEssayTask.title)}
                     </h2>
                   </div>
 
@@ -855,7 +855,7 @@ export default function StudentWorkmap() {
                               {i + 1}
                             </span>
                             <div>
-                              <div className="font-extrabold text-slate-900">{step.stepName}</div>
+                              <div className="font-extrabold text-slate-900">{tr(step.stepName)}</div>
                               {step.note && <div className="text-[11px] text-slate-500 font-semibold italic">{step.note}</div>}
                             </div>
                           </div>

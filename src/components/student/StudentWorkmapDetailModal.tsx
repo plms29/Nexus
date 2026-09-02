@@ -238,7 +238,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] sm:text-[11px] font-extrabold text-slate-600">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                {tr("An toàn (&lt;3.5 LU)")}
+                {tr("An toàn (<3.5 LU)")}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
@@ -246,7 +246,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
-                {tr("Quá tải (&gt;5 LU)")}
+                {tr("Quá tải (>5 LU)")}
               </span>
             </div>
           </div>
@@ -340,12 +340,12 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
                               {tr(task.subject_id) || tr("Tin học")}
                             </span>
                             <span className="bg-white border border-slate-200 text-slate-700 text-[10px] font-black px-2.5 py-0.5 rounded-md">
-                              {entry?.lu ? `${entry.lu} LU (${entry.minutes} phút)` : task.type === 'quiz' ? '1.5 LU (45m)' : '2.5 LU (75m)'}
+                              {entry?.lu ? `${entry.lu} LU (${entry.minutes} ${tr("phút")})` : task.type === 'quiz' ? '1.5 LU (45m)' : '2.5 LU (75m)'}
                             </span>
                           </div>
 
                           <div className="font-extrabold text-sm text-slate-900 group-hover:text-indigo-600 transition-colors">
-                            {task.title}
+                            {tr(task.title)}
                           </div>
 
                           <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-500 pt-1 border-t border-slate-200/60">

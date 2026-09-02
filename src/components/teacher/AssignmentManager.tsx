@@ -145,7 +145,7 @@ export const AssignmentManager: React.FC = () => {
         {
           id: 'demo-1',
           task_id: task.id,
-          question_text: `Câu 1 (${task.title}): Hãy chọn khẳng định đúng nhất về chủ đề này.`,
+          question_text: `Câu 1 (${tr(task.title)}): Hãy chọn khẳng định đúng nhất về chủ đề này.`,
           options: ['Đáp án A: Đúng hoàn toàn', 'Đáp án B: Sai một phần', 'Đáp án C: Chưa đủ dữ kiện', 'Đáp án D: Tất cả đều sai'],
           correct_answer: 'A',
           level: 'l1',
@@ -154,7 +154,7 @@ export const AssignmentManager: React.FC = () => {
         {
           id: 'demo-2',
           task_id: task.id,
-          question_text: `Câu 2 (${task.title}): Tính toán giá trị hoặc phân tích tình huống thực tế sau.`,
+          question_text: `Câu 2 (${tr(task.title)}): Tính toán giá trị hoặc phân tích tình huống thực tế sau.`,
           options: ['Phương án 1: Kết quả = 100', 'Phương án 2: Kết quả = 250', 'Phương án 3: Kết quả = 500', 'Phương án 4: Kết quả = 1000'],
           correct_answer: 'B',
           level: 'l2',
@@ -306,7 +306,7 @@ export const AssignmentManager: React.FC = () => {
             >
               <option value="all">{tr("Tất cả môn học")}</option>
               {subjects?.map((s: string) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>{tr(s)}</option>
               ))}
             </select>
           </div>
@@ -348,7 +348,7 @@ export const AssignmentManager: React.FC = () => {
 
                   {/* Task Title */}
                   <h3 className="text-lg font-black text-slate-900 leading-snug tracking-tight mb-2 group-hover:text-blue-600 transition-colors">
-                    {task.title}
+                    {tr(task.title)}
                   </h3>
 
                   {/* Task Meta Details */}
@@ -475,7 +475,7 @@ export const AssignmentManager: React.FC = () => {
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
                       {subjects?.map((s: string) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>{tr(s)}</option>
                       ))}
                     </select>
                   </div>
@@ -822,7 +822,7 @@ export const AssignmentManager: React.FC = () => {
                             </span>
                             <div className="space-y-2">
                               <div className="font-extrabold text-slate-900 text-sm leading-relaxed">
-                                {q.question_text}
+                                {tr(q.question_text)}
                               </div>
                               {q.image_url && (
                                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -872,7 +872,7 @@ export const AssignmentManager: React.FC = () => {
                                 <span className={clsx("w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0", isCorrect ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600")}>
                                   {optLetter}
                                 </span>
-                                <span>{opt}</span>
+                                <span>{tr(opt)}</span>
                               </div>
                             );
                           })}

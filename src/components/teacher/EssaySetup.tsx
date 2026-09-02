@@ -1,5 +1,6 @@
 'use client';
 import { useTranslate, useLanguage } from '@/lib/i18n';
+import { fill } from '@/lib/i18n/translate';
 import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
@@ -280,8 +281,8 @@ export default function EssaySetup({
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMins = totalMinutes % 60;
   const totalTimeString = totalHours > 0 
-    ? `${totalHours} tiếng ${remainingMins > 0 ? remainingMins + ' phút' : ''}` 
-    : `${totalMinutes} phút`;
+    ? `${totalHours} ${tr('tiếng')} ${remainingMins > 0 ? remainingMins + ' ' + tr('phút') : ''}`
+    : `${totalMinutes} ${tr('phút')}`;
 
   // Gemini AI Analysis Trigger
   const handleAnalyzeWithGemini = async () => {
@@ -305,7 +306,8 @@ export default function EssaySetup({
         if (data.steps && data.steps.length > 0) {
           const cleanedSteps = data.steps.map((s: ProcessStepItem) => ({
             ...s,
-            stepName: tr(stripMinutesFromName(s.stepName)),
+            // AI đôi khi vẫn giữ tiền tố "Bước N:" tiếng Việt dù đã yêu cầu trả lời tiếng Anh.
+            stepName: tr(stripMinutesFromName(s.stepName)).replace(/^Bước(\s+\d+\s*:)/, tr('Bước') + '$1'),
           }));
           setProcessSteps(withGroupCoordination(cleanedSteps, isGroup));
         }
@@ -447,7 +449,7 @@ export default function EssaySetup({
               title={`Đặt lại về khung thời gian chuẩn ${standardTotalMinutes} phút của dạng bài này`}
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-              Khung {standardTotalMinutes}{tr("p Chuẩn")}
+              {fill("Khung {min}p Chuẩn", { min: standardTotalMinutes }, lang)}
             </button>
 
             <div className="bg-indigo-50/80 border border-indigo-100 px-4 py-2 rounded-2xl flex items-center gap-2.5 whitespace-nowrap shadow-sm">

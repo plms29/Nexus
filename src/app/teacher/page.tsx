@@ -83,7 +83,7 @@ export default function Dashboard() {
                 <span className={clsx("ml-auto text-xs py-0.5 px-2.5 rounded-full font-bold", 
                   activeTab === 'question-bank' ? "bg-blue-700 text-white" : "bg-blue-100 text-blue-600"
                 )}>
-                  {pkgCount !== null ? `${pkgCount} Gói` : tr("Gói")}
+                  {pkgCount !== null ? `${pkgCount} ${tr("Gói")}` : tr("Gói")}
                 </span>
               </button>
               

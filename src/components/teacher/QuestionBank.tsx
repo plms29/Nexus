@@ -364,7 +364,7 @@ export default function QuestionBank() {
         setPackageQuestions(updatedQuestions);
         setPackages(prev => prev.map(p => p.id === activePackage.id ? { ...p, questions_count: updatedQuestions.length } : p));
 
-        alert(`Đã tải lên thành công ${successCount} câu hỏi vào gói "${activePackage.title}"!`);
+        alert(`Đã tải lên thành công ${successCount} câu hỏi vào gói "${tr(activePackage.title)}"!`);
       } catch (err) {
         console.error('Lỗi đọc file CSV:', err);
         alert(tr("Lỗi khi đọc file CSV. Vui lòng kiểm tra lại định dạng file!"));
@@ -534,7 +534,7 @@ export default function QuestionBank() {
               </div>
               <h3 className="font-extrabold text-slate-800 text-base">{tr("Chưa có gói câu hỏi nào")}</h3>
               <p className="text-xs text-slate-500 font-semibold max-w-sm mx-auto">
-                {tr("Hãy bấm nút \"Tạo Gói Câu Hỏi Mới\" hoặc \"Upload CSV &rarr; Tự Tạo Gói Mới\" ở trên.")}
+                {tr("Hãy bấm nút \"Tạo Gói Câu Hỏi Mới\" hoặc \"Upload CSV ➔ Tự Tạo Gói Mới\" ở trên.")}
               </p>
             </div>
           ) : (
@@ -558,13 +558,13 @@ export default function QuestionBank() {
 
                     {/* Title */}
                     <h3 className="text-lg font-black text-slate-900 leading-snug tracking-tight mb-2 group-hover:text-blue-600 transition-colors">
-                      {pkg.title}
+                      {tr(pkg.title)}
                     </h3>
 
                     {/* Description */}
                     {pkg.description && (
                       <p className="text-xs text-slate-500 font-medium line-clamp-2 mb-3">
-                        {pkg.description}
+                        {tr(pkg.description)}
                       </p>
                     )}
                   </div>
@@ -610,7 +610,7 @@ export default function QuestionBank() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                    {activePackage.title}
+                    {tr(activePackage.title)}
                   </h2>
                   <span className="px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
                     {tr("Môn")} {tr(activePackage.subject)}
@@ -711,7 +711,7 @@ export default function QuestionBank() {
                             </span>
                           </div>
                           <div className="font-extrabold text-slate-900 text-base leading-relaxed">
-                            {q.question_text}
+                            {tr(q.question_text)}
                           </div>
                           {q.image_url && (
                             /* eslint-disable-next-line @next/next/no-img-element */
@@ -767,7 +767,7 @@ export default function QuestionBank() {
                               )}>
                                 {optLetter}
                               </span>
-                              <span className="truncate">{opt}</span>
+                              <span className="truncate">{tr(opt)}</span>
                             </div>
                             {isCorrect && (
                               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -781,7 +781,7 @@ export default function QuestionBank() {
                     {q.explanation && (
                       <div className="text-xs text-slate-600 font-medium bg-slate-50 p-3 rounded-xl border border-slate-100 ml-9">
                         <strong className="text-slate-800 font-extrabold uppercase text-[10px] block mb-1">{tr("Giải thích đáp án đúng:")}</strong>
-                        {q.explanation}
+                        {tr(q.explanation)}
                       </div>
                     )}
                   </div>
@@ -843,7 +843,7 @@ export default function QuestionBank() {
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
                     {subjects?.map((s: string) => (
-                      <option key={s} value={s}>{s}</option>
+                      <option key={s} value={s}>{tr(s)}</option>
                     ))}
                   </select>
                 </div>

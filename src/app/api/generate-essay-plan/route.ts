@@ -55,7 +55,14 @@ export async function POST(req: Request) {
         };
         const taskTypeLabel = taskTypeLabels[taskType] || 'VIẾT BÀI ESSAY';
 
+        // Giao diện tiếng Anh thì kế hoạch AI cũng phải là tiếng Anh, nếu không giáo viên
+        // nhận về một bảng bước làm bài lẫn hai thứ tiếng.
+        const outputLanguageRule = uiLang === 'en'
+          ? 'IMPORTANT: write every "stepName", "note" and outline "text" in ENGLISH.'
+          : 'Viết toàn bộ "stepName", "note" và "text" của dàn ý bằng TIẾNG VIỆT.';
+
         const prompt = `
+        ${outputLanguageRule}
         Bạn là Trợ lý Giáo dục AI (ExamLoad Radar).
         Nhiệm vụ: Phân tích độ khó & tính thời gian LÀM BÀI TẬP THPT (${taskTypeLabel}) thực tế (TỔNG THỜI GIAN KHÔNG VƯỢT QUÁ 180 PHÚT):
 

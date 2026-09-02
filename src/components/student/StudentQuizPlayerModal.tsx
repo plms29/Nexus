@@ -213,7 +213,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                     </span>
                   </div>
                   <h2 className="text-lg sm:text-xl font-black tracking-tight text-white mt-1">
-                    {task.title}
+                    {tr(task.title)}
                   </h2>
                 </div>
               </div>
@@ -292,7 +292,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                             )}>
                               {idx + 1}
                             </span>
-                            <span className="font-extrabold text-slate-900 text-sm">{q.question_text}</span>
+                            <span className="font-extrabold text-slate-900 text-sm">{tr(q.question_text)}</span>
                           </div>
                           <span className={clsx(
                             "text-xs font-black px-2.5 py-0.5 rounded-md shrink-0 border",

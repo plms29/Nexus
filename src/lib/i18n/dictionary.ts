@@ -118,8 +118,8 @@ export const EN: Record<string, string> = {
     'Something went wrong while saving your role. Please try again!',
   'Không thể lưu vai trò vào cơ sở dữ liệu:': 'Could not save the role to the database:',
   'Đăng Ký Tài Khoản Mới Với Gmail Auth': 'Create a new account with Gmail Auth',
-  '&copy; 2026 ExamLoad Radar. Bảo mật thông tin qua Supabase Auth E2E encryption.':
-    '&copy; 2026 ExamLoad Radar. Secured with Supabase Auth E2E encryption.',
+  '© 2026 ExamLoad Radar. Bảo mật thông tin qua Supabase Auth E2E encryption.':
+    '© 2026 ExamLoad Radar. Secured with Supabase Auth E2E encryption.',
 
   // ---------- Onboarding giáo viên ----------
   'BƯỚC 1 / 3': 'STEP 1 / 3',
@@ -142,6 +142,7 @@ export const EN: Record<string, string> = {
   'Tiếp theo': 'Next',
   'Quay lại': 'Back',
   'Trang trước': 'Previous',
+  'Trang sau': 'Next page',
   'Hoàn Tất': 'Finish',
   'Chọn Tổ hợp và Bộ môn phụ trách': 'Choose your track and subjects',
   'Cấp THPT Việt Nam phân chia 2 ban chính. Vui lòng chọn Ban rồi chọn Môn học tương ứng.':
@@ -165,8 +166,8 @@ export const EN: Record<string, string> = {
   'KHỐI': 'GRADE',
   'Hệ thống phân quyền thông minh dành riêng cho giáo viên bộ môn Trung học Phổ thông tại Việt Nam. Tự động cá nhân hóa công cụ giảng dạy, sổ điểm và tài nguyên chuyên môn dựa trên Ban học':
     'A smart permission system built for Vietnamese high school subject teachers. It personalises teaching tools, gradebooks and resources based on your track.',
-  '&quot;Dưới ánh mặt trời không có nghề nào cao quý hơn nghề dạy học.&quot;':
-    '&quot;Under the sun there is no profession nobler than teaching.&quot;',
+  '\"Dưới ánh mặt trời không có nghề nào cao quý hơn nghề dạy học.\"':
+    '\"Under the sun there is no profession nobler than teaching.\"',
   'thuộc ban': 'in the',
   'tự nhiên': 'science',
   'xã hội': 'humanities',
@@ -272,6 +273,7 @@ export const EN: Record<string, string> = {
   'Làm nhóm': 'Group work',
   'Trắc nghiệm': 'Multiple choice',
   'Bài Luận Essay': 'Essay',
+  'Bài luận Essay': 'Essay',
   'Bài tập essay': 'Essay assignment',
   'Cho Lớp': 'For class',
   'Lớp': 'Class',
@@ -360,6 +362,7 @@ export const EN: Record<string, string> = {
   '3 phút': '3 minutes',
   '5 phút': '5 minutes',
   'giây': 'seconds',
+  'tiếng': 'h',
   'phút': 'minutes',
   'phút (': 'min (',
   'phút)': 'min)',
@@ -373,6 +376,7 @@ export const EN: Record<string, string> = {
   'phút (theo ma trận độ khó)': 'min (from the difficulty matrix)',
   'phút (thầy/cô tự đặt)': 'min (set by you)',
   'p Chuẩn': 'min standard',
+  'Khung {min}p Chuẩn': '{min}-min standard frame',
   'ƯỚC LƯỢNG THỜI GIAN': 'TIME ESTIMATE',
   'Biểu đồ thời gian làm bài chuẩn xác': 'Accurate working-time chart',
 
@@ -510,8 +514,8 @@ export const EN: Record<string, string> = {
   'Đang đọc CSV...': 'Reading the CSV...',
   'Chưa có gói câu hỏi nào': 'No question packs yet',
   'Chưa có gói câu hỏi nào trong Ngân Hàng': 'The bank has no question packs yet',
-  'Hãy bấm nút "Tạo Gói Câu Hỏi Mới" hoặc "Upload CSV &rarr; Tự Tạo Gói Mới" ở trên.':
-    'Use "Create a new question pack" or "Upload CSV &rarr; auto-create a pack" above.',
+  'Hãy bấm nút "Tạo Gói Câu Hỏi Mới" hoặc "Upload CSV ➔ Tự Tạo Gói Mới" ở trên.':
+    'Use "Create a new question pack" or "Upload CSV ➔ auto-create a pack" above.',
   'Đang tải danh sách gói câu hỏi từ Supabase...': 'Loading question packs from Supabase...',
   'Đang tải danh sách câu hỏi trong gói...': 'Loading the questions in this pack...',
   'Đang tải danh sách câu hỏi...': 'Loading questions...',
@@ -645,7 +649,7 @@ export const EN: Record<string, string> = {
   'Môn': 'Subject',
   'Môn:': 'Subject:',
   'Môn học:': 'Subject:',
-  'Môn & Bài (': 'Subject & assignment (',
+  'Môn & Bài (': 'Tasks (',
   'Ngày': 'Date',
   'Chưa xếp lịch': 'Not scheduled',
   '(Đang giao)': '(being assigned)',
@@ -688,12 +692,15 @@ export const EN: Record<string, string> = {
   'Xem nhiều ngày hơn (Cả tuần)': 'Show more days (full week)',
   'Gọn (1 ngày quá khứ)': 'Compact (1 past day)',
   '1 ngày qua': 'Last 1 day',
+  '3 Ngày': '3 Days',
+  '4 Ngày': '4 Days',
+  '7 Ngày': '7 Days',
   '7 ngày tới': 'Next 7 days',
   '14 ngày tới': 'Next 14 days',
   '30 ngày tới': 'Next 30 days',
   'Khoảng thời gian:': 'Date range:',
   'Hôm nay': 'Today',
-  'Tải:': 'Load:',
+  'Tải:': 'LU:',
   'Tải học tập:': 'Study load:',
   'Tải công việc trong ngày:': 'Load for the day:',
   'TỔNG LU NGÀY': 'DAILY LU TOTAL',
@@ -708,13 +715,13 @@ export const EN: Record<string, string> = {
   '(Tối đa 5.0 LU/ngày)': '(max 5.0 LU/day)',
   'Không giới hạn': 'No limit',
   'An toàn': 'Safe',
-  'An toàn (&lt;3.5 LU)': 'Safe (&lt;3.5 LU)',
+  'An toàn (<3.5 LU)': 'Safe (<3.5 LU)',
   'Vừa': 'Moderate',
   'Vừa phải': 'Moderate',
   'Vừa phải (3.5-5 LU)': 'Moderate (3.5-5 LU)',
   'Quá tải': 'Overloaded',
   'Quá Tải': 'Overloaded',
-  'Quá tải (&gt;5 LU)': 'Overloaded (&gt;5 LU)',
+  'Quá tải (>5 LU)': 'Overloaded (>5 LU)',
   'Cân đối': 'Balanced',
   'Lệch tỷ lệ': 'Unbalanced',
   'Vượt': 'Over',
@@ -943,6 +950,30 @@ export const EN: Record<string, string> = {
   'Thông báo điện thoại liên tục gây ngắt quãng luồng tư duy (Focus Flow).':
     'Constant phone notifications keep breaking your focus flow.',
 
+  // ---------- Câu cảnh báo do engine sinh (mẫu có chỗ trống {…}) ----------
+  'Nhóm môn {group} đã dùng {used}/{quota} LU (quỹ {percent}% của {cap} LU tuần), vượt {excess} LU so với tỷ lệ 70/30 của lớp ban {orientation}.':
+    'The {group} subject group has used {used}/{quota} LU ({percent}% of the {cap} LU weekly budget), {excess} LU beyond the 70/30 split for a {orientation} class.',
+  'Tuần đã có {total}/{cap} LU và nhóm môn {group} đang chiếm {ratio}%, lệch khỏi tỷ lệ 70/30 của lớp ban {orientation}. Nên cân nhắc dời bớt sang nhóm môn còn lại.':
+    'The week already holds {total}/{cap} LU and the {group} subject group takes {ratio}% of it, off the 70/30 split for a {orientation} class. Consider moving some of it to the other group.',
+  'Tuần mới có {total}/{cap} LU — chưa đủ tải để đánh giá tỷ lệ 70/30. Hệ thống chỉ theo dõi, chưa cảnh báo.':
+    'The week holds only {total}/{cap} LU so far — not enough load to judge the 70/30 split. The system is tracking it without warning.',
+  'Tổng tải tuần {total} LU đã vượt ngưỡng khuyến nghị {cap} LU.':
+    'The weekly total of {total} LU is already past the recommended {cap} LU ceiling.',
+  'Bài được giao sau {hour}:00 nên hôm nay ({today}) không còn là ngày làm bài hợp lệ, mà hạn nộp lại là {deadline}. Học sinh không còn ngày nào để làm bài.':
+    'Assigned after {hour}:00, so today ({today}) is no longer a valid working day, yet the deadline is {deadline}. Students have no day left to work on it.',
+  'Bài được giao sau {hour}:00 nên hôm nay ({today}) đã hết quỹ thời gian tự học. Lịch làm bài bắt đầu từ {start}.':
+    "Assigned after {hour}:00, so today's ({today}) self-study budget is used up. Work is scheduled from {start}.",
+  'Hạn nộp {deadline} sớm hơn ngày bắt đầu làm bài {start}.':
+    'The {deadline} deadline falls before the {start} start date.',
+  'Giao Bài Quá Gấp Sau': 'Assigned far too late, after',
+  'Giao Bài Sau 19:00 - Lịch Bắt Đầu Từ Ngày Mai':
+    'Assigned after 19:00 — scheduling starts tomorrow',
+  'Tự nhiên (nhóm chính)': 'Science (main group)',
+  'Xã hội (nhóm chính)': 'Humanities (main group)',
+  'Tự nhiên (nhóm phụ)': 'Science (secondary group)',
+  'Xã hội (nhóm phụ)': 'Humanities (secondary group)',
+  'Bài tập khác': 'Other assignment',
+
   // ---------- Dạng bài (task-templates) ----------
   'Trắc nghiệm (nguyên khối)': 'Multiple choice (atomic)',
   'Tự luận (nguyên khối)': 'Written answer (atomic)',
@@ -1108,6 +1139,21 @@ export const EN: Record<string, string> = {
     'Time allocated to the high school competency standard.',
 
   // ---------- Thứ trong tuần ----------
+  'Chủ Nhật': 'Sunday',
+  'Thứ Hai': 'Monday',
+  'Thứ Ba': 'Tuesday',
+  'Thứ Tư': 'Wednesday',
+  'Thứ Năm': 'Thursday',
+  'Thứ Sáu': 'Friday',
+  'Thứ Bảy': 'Saturday',
+  'CN': 'Sun',
+  'Thứ 2': 'Mon',
+  'Thứ 3': 'Tue',
+  'Thứ 4': 'Wed',
+  'Thứ 5': 'Thu',
+  'Thứ 6': 'Fri',
+  'Thứ 7': 'Sat',
+  'Môn học': 'Subject',
   'CHỦ NHẬT': 'SUNDAY',
   'THỨ HAI': 'MONDAY',
   'THỨ BA': 'TUESDAY',

@@ -311,7 +311,7 @@ export default function SelectRolePage() {
       {/* Footer */}
       <footer className="relative z-10 text-center py-4">
         <p className="text-xs text-slate-500 font-medium">
-          {tr("&copy; 2026 ExamLoad Radar. Bảo mật thông tin qua Supabase Auth E2E encryption.")}
+          {tr("© 2026 ExamLoad Radar. Bảo mật thông tin qua Supabase Auth E2E encryption.")}
         </p>
       </footer>
     </div>

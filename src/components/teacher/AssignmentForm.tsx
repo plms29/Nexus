@@ -545,7 +545,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                     >
                       {TASK_TYPE_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt.value} value={opt.value}>{tr(opt.label)}</option>
                       ))}
                     </select>
                   </div>
@@ -657,7 +657,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                           >
                             {availablePackages.map(pkg => (
                               <option key={pkg.id} value={pkg.id}>
-                                {pkg.title} {tr("• Môn")} {pkg.subject} - {pkg.questions_count || 0} {tr("câu hỏi")}
+                                {tr(pkg.title)} {tr("• Môn")} {tr(pkg.subject)} - {pkg.questions_count || 0} {tr("câu hỏi")}
                               </option>
                             ))}
                           </select>
@@ -669,7 +669,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <Folder className="w-4 h-4 text-blue-600" />
-                                <strong className="text-sm font-black text-blue-950">{selectedPkgMeta.title}</strong>
+                                <strong className="text-sm font-black text-blue-950">{tr(selectedPkgMeta.title)}</strong>
                               </div>
                               <span className="text-xs font-extrabold text-blue-700 bg-white px-2.5 py-0.5 rounded-lg border border-blue-200 shadow-sm">
                                 {selectedPackageQuestions.length} {tr("câu hỏi sẵn có")}
@@ -687,7 +687,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                                 };
                                 return (
                                   <div key={level} className="bg-white p-2 rounded-xl border border-slate-200 text-center">
-                                    <div className="text-[10px] font-bold text-slate-400 uppercase">{LEVEL_LABELS[level]}</div>
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase">{tr(LEVEL_LABELS[level])}</div>
                                     <div className={clsx('text-sm font-black', colorByLevel[level])}>
                                       {quizDuration.countByLevel[level]} {tr("câu")}
                                     </div>
@@ -726,7 +726,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                                   {QUESTION_LEVELS.map(level => (
                                     <div key={level} className="space-y-1">
                                       <label className="block text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">
-                                        {LEVEL_LABELS[level]}
+                                        {tr(LEVEL_LABELS[level])}
                                       </label>
                                       <div className="flex items-center gap-1">
                                         <input
