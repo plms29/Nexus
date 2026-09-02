@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate, useDateLocale } from '@/lib/i18n';
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   format, 
@@ -16,7 +17,6 @@ import {
   addDays, 
   isToday 
 } from 'date-fns';
-import { vi } from 'date-fns/locale';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
@@ -37,6 +37,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   placeholder = 'Chọn ngày...',
   className
 }) => {
+  const tr = useTranslate();
+  const dateLocale = useDateLocale();
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,13 +132,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               {displayFormattedDate}
             </div>
             <div className="text-[11px] text-slate-500 font-medium">
-              {isToday(selectedDate) ? 'Hôm nay' : format(selectedDate, 'EEEE', { locale: vi })}
+              {isToday(selectedDate) ? tr("Hôm nay") : format(selectedDate, 'EEEE', { locale: dateLocale })}
             </div>
           </div>
         </div>
 
         <div className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-          Chọn
+          {tr("Chọn")}
         </div>
       </button>
 
@@ -157,7 +159,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             <div className="flex items-center justify-between mb-3 px-1">
               <div>
                 <span className="text-sm font-black text-slate-900 capitalize block">
-                  {format(currentMonth, 'MMMM yyyy', { locale: vi })}
+                  {format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
                 </span>
               </div>
               <div className="flex items-center gap-1">
@@ -178,7 +180,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   }}
                   className="px-2 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
                 >
-                  Hôm nay
+                  {tr("Hôm nay")}
                 </button>
                 <button
                   type="button"
@@ -233,28 +235,28 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 onClick={() => handleQuickPreset(0)}
                 className="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 transition-colors shrink-0"
               >
-                Hôm nay
+                {tr("Hôm nay")}
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickPreset(1)}
                 className="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 transition-colors shrink-0"
               >
-                +1 ngày
+                {tr("+1 ngày")}
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickPreset(3)}
                 className="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 transition-colors shrink-0"
               >
-                +3 ngày
+                {tr("+3 ngày")}
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickPreset(7)}
                 className="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 transition-colors shrink-0"
               >
-                +1 tuần
+                {tr("+1 tuần")}
               </button>
             </div>
           </motion.div>

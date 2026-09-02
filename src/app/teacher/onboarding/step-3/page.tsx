@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { ArrowLeft, Sparkles, Check, Loader2 } from 'lucide-react';
@@ -14,6 +15,7 @@ const classOptions = {
 };
 
 export default function Step3Page() {
+  const tr = useTranslate();
   const router = useRouter();
   const { state, updateState } = useOnboarding();
   const [error, setError] = useState('');
@@ -31,7 +33,7 @@ export default function Step3Page() {
 
   const handleFinish = async () => {
     if (state.selectedClasses.length === 0) {
-      setError('Vui lòng chọn ít nhất một lớp học');
+      setError(tr("Vui lòng chọn ít nhất một lớp học"));
       return;
     }
     
@@ -62,7 +64,7 @@ export default function Step3Page() {
       console.log('Onboarding complete:', state);
       router.push('/teacher');
     } catch (err: any) {
-      setError(err.message || 'Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.');
+      setError(err.message || tr('Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.'));
       console.error(err);
     } finally {
       setSaving(false);
@@ -74,15 +76,15 @@ export default function Step3Page() {
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-500" />
       
       <div className="mb-8">
-        <p className="text-blue-600 font-bold text-xs tracking-widest uppercase mb-2">BƯỚC 3 / 3</p>
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Đăng ký lớp học phụ trách</h2>
-        <p className="text-slate-600 text-sm">Chọn một hoặc nhiều lớp thầy/cô đang giảng dạy các bộ môn đã chọn trong học kỳ này.</p>
+        <p className="text-blue-600 font-bold text-xs tracking-widest uppercase mb-2">{tr("BƯỚC 3 / 3")}</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">{tr("Đăng ký lớp học phụ trách")}</h2>
+        <p className="text-slate-600 text-sm">{tr("Chọn một hoặc nhiều lớp thầy/cô đang giảng dạy các bộ môn đã chọn trong học kỳ này.")}</p>
       </div>
 
       <div className="space-y-6 mb-8">
         {(Object.keys(classOptions) as unknown as Array<keyof typeof classOptions>).map((grade) => (
           <div key={grade} className="border-b border-slate-200 pb-6 last:border-0">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">KHỐI {grade}</h3>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">{tr("KHỐI")} {grade}</h3>
             <div className="flex flex-wrap gap-3">
               {classOptions[grade].map((className) => {
                 const isSelected = state.selectedClasses.includes(className);
@@ -115,7 +117,7 @@ export default function Step3Page() {
           className="text-slate-500 hover:text-slate-800 flex items-center gap-2 text-sm font-medium transition-colors py-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Quay lại
+          {tr("Quay lại")}
         </button>
         <button 
           onClick={handleFinish}
@@ -123,7 +125,7 @@ export default function Step3Page() {
           className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed text-white font-medium py-2.5 px-6 rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-emerald-500/20"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {saving ? 'Đang lưu...' : 'Xác nhận đăng nhập'}
+          {saving ? tr("Đang lưu...") : tr("Xác nhận đăng nhập")}
         </button>
       </div>
     </div>

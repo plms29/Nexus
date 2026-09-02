@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate, useDateLocale } from '@/lib/i18n';
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -17,7 +18,6 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { format, addDays } from 'date-fns';
-import { vi } from 'date-fns/locale';
 import { useStore } from '@/store/useStore';
 import { Task } from '@/lib/engine/types';
 import { normalizeClassId, resolveStudentClassId } from '@/lib/class-utils';
@@ -35,6 +35,8 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
   onSelectQuizTask,
   onSelectEssayTask
 }) => {
+  const tr = useTranslate();
+  const dateLocale = useDateLocale();
   const { tasks, workmap, studentProfile, classes } = useStore();
 
   const studentClass = resolveStudentClassId(studentProfile.classId);
@@ -90,9 +92,9 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
 
     return dates.map(d => {
       const dateStr = format(d, 'yyyy-MM-dd');
-      const monthAbbr = format(d, 'MMM', { locale: vi }).toUpperCase();
+      const monthAbbr = format(d, 'MMM', { locale: dateLocale }).toUpperCase();
       const dayNum = format(d, 'dd');
-      const dayName = format(d, 'EEEE', { locale: vi });
+      const dayName = format(d, 'EEEE', { locale: dateLocale });
       const fullDateStr = format(d, 'dd/MM/yyyy');
       const isToday = dateStr === format(today, 'yyyy-MM-dd');
 
@@ -180,10 +182,10 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
               </div>
               <div>
                 <h2 className="text-lg sm:text-xl font-black text-white tracking-tight leading-tight">
-                  Chi Tiết Workmap & Lịch Phân Bổ Tải Học Tập
+                  {tr("Chi Tiết Workmap & Lịch Phân Bổ Tải Học Tập")}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-blue-200 font-semibold mt-1">
-                  Xem toàn bộ môn học, bài tập được giao và theo dõi chỉ số tải LU theo từng ngày.
+                  {tr("Xem toàn bộ môn học, bài tập được giao và theo dõi chỉ số tải LU theo từng ngày.")}
                 </p>
               </div>
             </div>
@@ -203,31 +205,31 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
               {/* Class Filter */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Filter className="w-4 h-4 text-indigo-600 shrink-0" />
-                <span className="shrink-0">LỌC:</span>
+                <span className="shrink-0">{tr("LỌC:")}</span>
                 <select
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
                   className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full sm:w-auto flex-1"
                 >
                   {studentClass && (
-                    <option value={studentClass}>Lớp {studentClass}</option>
+                    <option value={studentClass}>{tr("Lớp")} {studentClass}</option>
                   )}
-                  <option value="all">Tất cả các lớp</option>
+                  <option value="all">{tr("Tất cả các lớp")}</option>
                 </select>
               </div>
 
               {/* Time Range Filter */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="shrink-0">THỜI GIAN:</span>
+                <span className="shrink-0">{tr("THỜI GIAN:")}</span>
                 <select
                   value={timeRange}
                   onChange={(e) => setTimeRange(e.target.value as any)}
                   className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full sm:w-auto flex-1"
                 >
-                  <option value="1-past">1 ngày qua</option>
-                  <option value="7-days">7 ngày tới</option>
-                  <option value="14-days">14 ngày tới</option>
-                  <option value="all">Tất cả</option>
+                  <option value="1-past">{tr("1 ngày qua")}</option>
+                  <option value="7-days">{tr("7 ngày tới")}</option>
+                  <option value="14-days">{tr("14 ngày tới")}</option>
+                  <option value="all">{tr("Tất cả")}</option>
                 </select>
               </div>
             </div>
@@ -236,15 +238,15 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] sm:text-[11px] font-extrabold text-slate-600">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                An toàn (&lt;3.5 LU)
+                {tr("An toàn (&lt;3.5 LU)")}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                Vừa phải (3.5-5 LU)
+                {tr("Vừa phải (3.5-5 LU)")}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
-                Quá tải (&gt;5 LU)
+                {tr("Quá tải (&gt;5 LU)")}
               </span>
             </div>
           </div>
@@ -276,12 +278,12 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
                           </h3>
                           {item.isToday && (
                             <span className="bg-blue-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
-                              Hôm nay
+                              {tr("Hôm nay")}
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                          Số môn giao: {item.dayTasks.length} bài tập • Tổng thời gian: {item.totalMinutes} phút
+                          {tr("Số môn giao:")} {item.dayTasks.length} {tr("bài tập • Tổng thời gian:")} {item.totalMinutes} {tr("phút")}
                         </p>
                       </div>
                     </div>
@@ -289,7 +291,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
                     {/* LU Workload Badge */}
                     <div className="flex items-center gap-3 self-end sm:self-auto">
                       <div className="text-right">
-                        <div className="text-[10px] font-black uppercase text-slate-400">TỔNG LU NGÀY</div>
+                        <div className="text-[10px] font-black uppercase text-slate-400">{tr("TỔNG LU NGÀY")}</div>
                         <div className="text-base font-black text-slate-900">
                           <span className={clsx(
                             isOverloaded ? "text-rose-600" : isWarning ? "text-amber-600" : "text-blue-600"
@@ -309,7 +311,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
                             : "bg-emerald-50 text-emerald-700 border-emerald-200"
                       )}>
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        {isOverloaded ? 'Quá Tải' : isWarning ? 'Tải Vừa Phải' : 'Tải An Toàn'}
+                        {isOverloaded ? tr("Quá Tải") : isWarning ? tr("Tải Vừa Phải") : tr("Tải An Toàn")}
                       </span>
                     </div>
                   </div>
@@ -317,7 +319,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
                   {/* Day Tasks List */}
                   {item.dayTasks.length === 0 ? (
                     <div className="py-4 text-center text-xs font-semibold text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                      Không có bài tập nào giao trong ngày này.
+                      {tr("Không có bài tập nào giao trong ngày này.")}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -335,7 +337,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
                         >
                           <div className="flex items-center justify-between">
                             <span className="bg-purple-100 text-purple-700 text-[10px] font-black px-2.5 py-0.5 rounded-md">
-                              {task.subject_id || 'Tin học'}
+                              {tr(task.subject_id) || tr("Tin học")}
                             </span>
                             <span className="bg-white border border-slate-200 text-slate-700 text-[10px] font-black px-2.5 py-0.5 rounded-md">
                               {entry?.lu ? `${entry.lu} LU (${entry.minutes} phút)` : task.type === 'quiz' ? '1.5 LU (45m)' : '2.5 LU (75m)'}
@@ -347,10 +349,10 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
                           </div>
 
                           <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-500 pt-1 border-t border-slate-200/60">
-                            <span>Lớp: {task.class_id}</span>
+                            <span>{tr("Lớp:")} {task.class_id}</span>
                             <span className="flex items-center gap-1 text-indigo-600 font-black">
                               <Clock className="w-3 h-3" />
-                              Hạn nộp: {task.deadline || '25/07/2026'}
+                              {tr("Hạn nộp:")} {task.deadline || '25/07/2026'}
                             </span>
                           </div>
                         </div>
@@ -365,7 +367,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
           {/* Footer Bar */}
           <div className="bg-white p-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between shrink-0 gap-3 text-center sm:text-left">
             <span className="text-[11px] sm:text-xs font-semibold text-slate-500 max-w-[250px] sm:max-w-none leading-tight">
-              ExamLoad Radar • Hệ thống tự động cân bằng tải cho Giáo viên & Học sinh
+              {tr("ExamLoad Radar • Hệ thống tự động cân bằng tải cho Giáo viên & Học sinh")}
             </span>
 
             <button
@@ -373,7 +375,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
               onClick={onClose}
               className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all cursor-pointer shadow-sm"
             >
-              Đóng Workmap
+              {tr("Đóng Workmap")}
             </button>
           </div>
         </motion.div>

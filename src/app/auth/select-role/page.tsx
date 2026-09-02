@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -11,6 +12,7 @@ import { motion } from 'framer-motion';
 import clsx from 'clsx';
 
 export default function SelectRolePage() {
+  const tr = useTranslate();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -84,7 +86,7 @@ export default function SelectRolePage() {
 
     } catch (err: any) {
       console.error('Failed to set role:', err);
-      setError(err.message || 'Có lỗi xảy ra khi lưu vai trò. Vui lòng thử lại!');
+      setError(err.message || tr('Có lỗi xảy ra khi lưu vai trò. Vui lòng thử lại!'));
       setSubmitting(false);
     }
   };
@@ -93,7 +95,7 @@ export default function SelectRolePage() {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white font-sans">
         <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-        <p className="text-slate-300 font-medium text-sm">Đang chuẩn bị hồ sơ đăng ký...</p>
+        <p className="text-slate-300 font-medium text-sm">{tr("Đang chuẩn bị hồ sơ đăng ký...")}</p>
       </div>
     );
   }
@@ -141,13 +143,13 @@ export default function SelectRolePage() {
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-bold mb-4 backdrop-blur-md">
             <Sparkles className="w-4 h-4 text-blue-400" />
-            Đăng Ký Tài Khoản Mới Với Gmail Auth
+            {tr("Đăng Ký Tài Khoản Mới Với Gmail Auth")}
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-4">
-            Chào mừng bạn! Bạn là <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">Giáo viên</span> hay <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Học sinh</span>?
+            {tr("Chào mừng bạn! Bạn là")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">{tr("Giáo viên")}</span> hay <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">{tr("Học sinh")}</span>?
           </h1>
           <p className="text-slate-400 text-base sm:text-lg max-w-xl mx-auto font-medium leading-relaxed">
-            Vui lòng chọn vai trò phù hợp để hệ thống thiết lập lộ trình làm việc & phân quyền công cụ chính xác cho bạn.
+            {tr("Vui lòng chọn vai trò phù hợp để hệ thống thiết lập lộ trình làm việc & phân quyền công cụ chính xác cho bạn.")}
           </p>
         </motion.div>
 
@@ -184,29 +186,29 @@ export default function SelectRolePage() {
                   <GraduationCap className="w-7 h-7" />
                 </div>
                 <span className="text-xs font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-full">
-                  Dành cho Thầy / Cô
+                  {tr("Dành cho Thầy / Cô")}
                 </span>
               </div>
 
               <h2 className="text-2xl font-black text-white mb-2 group-hover:text-indigo-300 transition-colors">
-                Giáo Viên Trung Học
+                {tr("Giáo Viên Trung Học")}
               </h2>
               <p className="text-slate-400 text-sm leading-relaxed mb-6 font-medium">
-                Tạo và quản lý bài tập, ngân hàng câu hỏi, kiểm soát ma trận đề thi và theo dõi khối lượng học tập (ExamLoad) của các lớp.
+                {tr("Tạo và quản lý bài tập, ngân hàng câu hỏi, kiểm soát ma trận đề thi và theo dõi khối lượng học tập (ExamLoad) của các lớp.")}
               </p>
 
               <ul className="space-y-2.5 mb-8 text-xs font-semibold text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span>Thiết lập bài tập Trắc nghiệm / Tự luận</span>
+                  <span>{tr("Thiết lập bài tập Trắc nghiệm / Tự luận")}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span>Ma trận câu hỏi AI L1 - L4</span>
+                  <span>{tr("Ma trận câu hỏi AI L1 - L4")}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span>Radar cảnh báo quá tải học sinh</span>
+                  <span>{tr("Radar cảnh báo quá tải học sinh")}</span>
                 </li>
               </ul>
             </div>
@@ -223,11 +225,11 @@ export default function SelectRolePage() {
               {submitting && selectedRole === 'teacher' ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang khởi tạo tài khoản Giáo viên...</span>
+                  <span>{tr("Đang khởi tạo tài khoản Giáo viên...")}</span>
                 </>
               ) : (
                 <>
-                  <span>Chọn Vai Trò Giáo Viên</span>
+                  <span>{tr("Chọn Vai Trò Giáo Viên")}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -254,29 +256,29 @@ export default function SelectRolePage() {
                   <UserCheck className="w-7 h-7" />
                 </div>
                 <span className="text-xs font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-3 py-1 rounded-full">
-                  Dành cho Học Sinh
+                  {tr("Dành cho Học Sinh")}
                 </span>
               </div>
 
               <h2 className="text-2xl font-black text-white mb-2 group-hover:text-cyan-300 transition-colors">
-                Học Sinh Trung Học
+                {tr("Học Sinh Trung Học")}
               </h2>
               <p className="text-slate-400 text-sm leading-relaxed mb-6 font-medium">
-                Xem lịch nộp bài tập, làm bài trực tuyến, phân tích lộ trình học tập cá nhân và xem mức độ áp lực ExamLoad của lớp.
+                {tr("Xem lịch nộp bài tập, làm bài trực tuyến, phân tích lộ trình học tập cá nhân và xem mức độ áp lực ExamLoad của lớp.")}
               </p>
 
               <ul className="space-y-2.5 mb-8 text-xs font-semibold text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Làm bài trực tuyến & nộp tự luận</span>
+                  <span>{tr("Làm bài trực tuyến & nộp tự luận")}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Cá nhân hóa theo Lớp học & Trường</span>
+                  <span>{tr("Cá nhân hóa theo Lớp học & Trường")}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Biểu đồ thời gian làm bài chuẩn xác</span>
+                  <span>{tr("Biểu đồ thời gian làm bài chuẩn xác")}</span>
                 </li>
               </ul>
             </div>
@@ -293,11 +295,11 @@ export default function SelectRolePage() {
               {submitting && selectedRole === 'student' ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang khởi tạo tài khoản Học sinh...</span>
+                  <span>{tr("Đang khởi tạo tài khoản Học sinh...")}</span>
                 </>
               ) : (
                 <>
-                  <span>Chọn Vai Trò Học Sinh</span>
+                  <span>{tr("Chọn Vai Trò Học Sinh")}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -309,7 +311,7 @@ export default function SelectRolePage() {
       {/* Footer */}
       <footer className="relative z-10 text-center py-4">
         <p className="text-xs text-slate-500 font-medium">
-          &copy; 2026 ExamLoad Radar. Bảo mật thông tin qua Supabase Auth E2E encryption.
+          {tr("&copy; 2026 ExamLoad Radar. Bảo mật thông tin qua Supabase Auth E2E encryption.")}
         </p>
       </footer>
     </div>

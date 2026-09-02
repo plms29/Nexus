@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -41,6 +42,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
   onClose,
   task
 }) => {
+  const tr = useTranslate();
   const { addQuizResult, quizResults } = useStore();
 
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
@@ -204,10 +206,10 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black uppercase tracking-wider bg-blue-500/30 text-blue-200 border border-blue-400/30 px-2.5 py-0.5 rounded-full">
-                      Môn {task.subject_id || 'Trắc nghiệm'}
+                      {tr("Môn")} {tr(task.subject_id) || tr("Trắc nghiệm")}
                     </span>
                     <span className="text-[10px] font-bold text-slate-300">
-                      Lớp {task.class_id || '10A1'}
+                      {tr("Lớp")} {task.class_id || '10A1'}
                     </span>
                   </div>
                   <h2 className="text-lg sm:text-xl font-black tracking-tight text-white mt-1">
@@ -241,7 +243,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
             {loading ? (
               <div className="py-16 text-center space-y-3">
                 <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-xs font-bold text-slate-500">Đang tải ngân hàng câu hỏi trắc nghiệm...</p>
+                <p className="text-xs font-bold text-slate-500">{tr("Đang tải ngân hàng câu hỏi trắc nghiệm...")}</p>
               </div>
             ) : isSubmitted ? (
               /* RESULTS SCREEN */
@@ -252,15 +254,15 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                   </div>
 
                   <div>
-                    <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Kết Quả Bài Trắc Nghiệm</span>
+                    <span className="text-xs font-black uppercase text-slate-400 tracking-wider">{tr("Kết Quả Bài Trắc Nghiệm")}</span>
                     <h3 className="text-3xl font-black text-slate-900 mt-1">
-                      {calculateScore()} / {totalQ} CÂU ĐÚNG ({Math.round((calculateScore() / totalQ) * 100)}%)
+                      {calculateScore()} / {totalQ} {tr("CÂU ĐÚNG (")}{Math.round((calculateScore() / totalQ) * 100)}%)
                     </h3>
                   </div>
 
                   <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 font-extrabold text-xs border border-emerald-200">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    Đã Hoàn Thành & Tự Động Ghi Nhận Kết Quả Học Tập
+                    {tr("Đã Hoàn Thành & Tự Động Ghi Nhận Kết Quả Học Tập")}
                   </div>
                 </div>
 
@@ -268,7 +270,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                 <div className="space-y-4">
                   <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
                     <HelpCircle className="w-4 h-4 text-blue-600" />
-                    Chi Tiết Đáp Án & Hướng Dẫn Giải:
+                    {tr("Chi Tiết Đáp Án & Hướng Dẫn Giải:")}
                   </h4>
 
                   {questions.map((q, idx) => {
@@ -296,7 +298,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                             "text-xs font-black px-2.5 py-0.5 rounded-md shrink-0 border",
                             isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
                           )}>
-                            {isCorrect ? '✓ Đúng' : '✗ Sai'}
+                            {isCorrect ? tr("✓ Đúng") : tr('✗ Sai')}
                           </span>
                         </div>
 
@@ -304,23 +306,23 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={q.image_url}
-                            alt="Ảnh minh họa đề bài"
+                            alt={tr("Ảnh minh họa đề bài")}
                             className="ml-8 max-h-48 w-auto rounded-xl border border-slate-200 object-contain"
                           />
                         )}
 
                         <div className="space-y-1.5 pl-8 text-xs font-semibold">
                           <div className="text-slate-700">
-                            Lựa chọn của em: <strong className={isCorrect ? "text-emerald-700" : "text-rose-700"}>{chosen || '(Chưa chọn)'}</strong>
+                            {tr("Lựa chọn của em:")} <strong className={isCorrect ? "text-emerald-700" : "text-rose-700"}>{tr(chosen) || tr("(Chưa chọn)")}</strong>
                           </div>
                           {!isCorrect && (
                             <div className="text-emerald-700 font-extrabold">
-                              Đáp án chính xác: {q.correct_answer}
+                              {tr("Đáp án chính xác:")} {tr(q.correct_answer)}
                             </div>
                           )}
                           {q.explanation && (
                             <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-900 text-[11px] font-semibold mt-2 leading-relaxed">
-                              💡 <strong>Giải thích chi tiết:</strong> {q.explanation}
+                              💡 <strong>{tr("Giải thích chi tiết:")}</strong> {tr(q.explanation)}
                             </div>
                           )}
                         </div>
@@ -335,8 +337,8 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                 {/* Question Navigator Bar */}
                 <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-2">
                   <div className="flex items-center justify-between text-xs font-extrabold text-slate-500">
-                    <span>Danh Sách Câu Hỏi ({totalQ} câu):</span>
-                    <span>Đã trả lời: {Object.keys(answers).length}/{totalQ}</span>
+                    <span>{tr("Danh Sách Câu Hỏi (")}{totalQ} {tr("câu):")}</span>
+                    <span>{tr("Đã trả lời:")} {Object.keys(answers).length}/{totalQ}</span>
                   </div>
 
                   <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -370,16 +372,16 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                     <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                       <div>
                         <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
-                          Câu {currentIndex + 1} / {totalQ}
+                          {tr("Câu")} {currentIndex + 1} / {totalQ}
                         </span>
                         <h3 className="text-base font-black text-slate-900 mt-2 leading-relaxed">
-                          {currentQ.question_text}
+                          {tr(currentQ.question_text)}
                         </h3>
                         {currentQ.image_url && (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={currentQ.image_url}
-                            alt="Ảnh minh họa đề bài"
+                            alt={tr("Ảnh minh họa đề bài")}
                             className="mt-3 max-h-72 w-auto rounded-2xl border border-slate-200 object-contain"
                           />
                         )}
@@ -401,7 +403,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                                 : "bg-slate-50 hover:bg-slate-100/80 border-slate-200 text-slate-800"
                             )}
                           >
-                            <span className="leading-relaxed">{opt}</span>
+                            <span className="leading-relaxed">{tr(opt)}</span>
                             <div className={clsx(
                               "w-5 h-5 rounded-full border flex items-center justify-center shrink-0",
                               isSelected ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300"
@@ -426,7 +428,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                 onClick={onClose}
                 className="ml-auto px-6 py-2.5 rounded-xl font-extrabold text-xs bg-slate-900 hover:bg-slate-800 text-white shadow-md transition-all cursor-pointer"
               >
-                Hoàn Tất & Quay Lại Workmap
+                {tr("Hoàn Tất & Quay Lại Workmap")}
               </button>
             ) : (
               <>
@@ -436,7 +438,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                   disabled={currentIndex === 0}
                   className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors border border-slate-200 flex items-center gap-1.5"
                 >
-                  <ArrowLeft className="w-4 h-4" /> Câu Trước
+                  <ArrowLeft className="w-4 h-4" /> {tr("Câu Trước")}
                 </button>
 
                 <div className="flex items-center gap-2">
@@ -446,7 +448,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                       onClick={() => setCurrentIndex(prev => Math.min(totalQ - 1, prev + 1))}
                       className="px-5 py-2.5 rounded-xl font-extrabold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 transition-all"
                     >
-                      Câu Tiếp <ArrowRight className="w-4 h-4" />
+                      {tr("Câu Tiếp")} <ArrowRight className="w-4 h-4" />
                     </button>
                   ) : (
                     <button
@@ -454,7 +456,7 @@ export const StudentQuizPlayerModal: React.FC<StudentQuizPlayerModalProps> = ({
                       onClick={handleSubmitQuiz}
                       className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Nộp Bài Trắc Nghiệm
+                      <CheckCircle2 className="w-4 h-4" /> {tr("Nộp Bài Trắc Nghiệm")}
                     </button>
                   )}
                 </div>

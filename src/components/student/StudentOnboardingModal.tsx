@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, School, GraduationCap, ArrowRight, MapPin, AlertCircle, Loader2 } from 'lucide-react';
@@ -31,6 +32,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
   isOpen,
   onClose
 }) => {
+  const tr = useTranslate();
   const { studentProfile, setStudentProfile } = useStore();
 
   const [name, setName] = useState(studentProfile.name || '');
@@ -150,10 +152,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 text-blue-100 border border-white/30 px-2.5 py-0.5 rounded-full flex items-center gap-1 w-fit">
-                  {studentProfile.isOnboarded ? 'Hồ Sơ Học Sinh' : 'Hồ Sơ Học Sinh Lần Đầu'}
+                  {studentProfile.isOnboarded ? tr("Hồ Sơ Học Sinh") : tr("Hồ Sơ Học Sinh Lần Đầu")}
                 </span>
                 <h2 className="text-xl font-black text-white tracking-tight mt-1">
-                  Chỉnh Sửa Hồ Sơ & Đổi Lớp Học
+                  {tr("Chỉnh Sửa Hồ Sơ & Đổi Lớp Học")}
                 </h2>
               </div>
             </div>
@@ -170,7 +172,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
             {/* Avatar Selector with Vibrant 3D Avatars */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider block mb-2.5">
-                Chân Dung Avatar 3D:
+                {tr("Chân Dung Avatar 3D:")}
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5">
                 {AVATAR_OPTIONS.map((av) => (
@@ -195,13 +197,13 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
                 <User className="w-4 h-4 text-blue-600" />
-                Họ và Tên Học Sinh:
+                {tr("Họ và Tên Học Sinh:")}
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ví dụ: Nguyễn Văn Học"
+                placeholder={tr("Ví dụ: Nguyễn Văn Học")}
                 className="w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
@@ -211,14 +213,14 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <GraduationCap className="w-4 h-4 text-indigo-600" />
-                  Lớp Học (Ví dụ: 10A5, 10A1, 11B2, 12A5):
+                  {tr("Lớp Học (Ví dụ: 10A5, 10A1, 11B2, 12A5):")}
                 </span>
               </label>
               <input
                 type="text"
                 value={classId}
                 onChange={(e) => handleClassChange(e.target.value)}
-                placeholder="Ví dụ: 10A5, 11B2, 12/1"
+                placeholder={tr("Ví dụ: 10A5, 11B2, 12/1")}
                 className={clsx(
                   "w-full px-4 py-3 rounded-2xl border text-sm font-extrabold uppercase shadow-2xs transition-all bg-white border-slate-200 focus:outline-none",
                   classError
@@ -239,13 +241,13 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               <div>
                 <label className="text-xs font-black text-slate-700 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
                   <School className="w-4 h-4 text-purple-600" />
-                  Trường Học:
+                  {tr("Trường Học:")}
                 </label>
                 <input
                   type="text"
                   value={school}
                   onChange={(e) => setSchool(e.target.value)}
-                  placeholder="Ví dụ: THPT Chuyên Lê Quý Đôn"
+                  placeholder={tr("Ví dụ: THPT Chuyên Lê Quý Đôn")}
                   className="w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 focus:outline-none"
                 />
               </div>
@@ -253,13 +255,13 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               <div>
                 <label className="text-xs font-black text-slate-700 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-emerald-600" />
-                  Tỉnh / Thành Phố:
+                  {tr("Tỉnh / Thành Phố:")}
                 </label>
                 <input
                   type="text"
                   value={province}
                   onChange={(e) => setProvince(e.target.value)}
-                  placeholder="Ví dụ: Đà Nẵng"
+                  placeholder={tr("Ví dụ: Đà Nẵng")}
                   className="w-full px-4 py-3 rounded-2xl border text-sm font-extrabold shadow-2xs transition-all bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
@@ -275,11 +277,11 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Đang lưu...</span>
+                    <span>{tr("Đang lưu...")}</span>
                   </>
                 ) : (
                   <>
-                    <span>Lưu Hồ Sơ</span>
+                    <span>{tr("Lưu Hồ Sơ")}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -290,7 +292,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                 onClick={onClose}
                 className="px-5 py-3.5 rounded-2xl font-black text-sm bg-slate-200 text-slate-700 hover:bg-slate-300 transition-all cursor-pointer disabled:opacity-70"
               >
-                Đóng
+                {tr("Đóng")}
               </button>
             </div>
           </form>

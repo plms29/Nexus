@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
+import { LanguageToggle } from '@/components/LanguageToggle';
 import Link from 'next/link';
 import { 
   ArrowRight, BookOpen, BrainCircuit, Target, ShieldCheck, 
@@ -25,6 +27,7 @@ const staggerContainer = {
 };
 
 export default function Home() {
+  const tr = useTranslate();
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200 overflow-hidden">
       {/* Navigation */}
@@ -41,18 +44,19 @@ export default function Home() {
             </div>
             <span className="font-bold text-xl text-slate-900 tracking-tight">ExamLoad Radar</span>
           </div>
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <LanguageToggle />
             <Link 
               href="/login" 
               className="text-sm font-bold text-slate-700 hover:text-blue-600 transition-colors px-3 py-2"
             >
-              Đăng nhập
+              {tr("Đăng nhập")}
             </Link>
             <Link 
               href="/login?tab=signup" 
               className="text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-5 py-2.5 rounded-xl shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:-translate-y-0.5"
             >
-              Đăng ký ngay
+              {tr("Đăng ký ngay")}
             </Link>
           </div>
         </div>
@@ -87,18 +91,18 @@ export default function Home() {
           >
             <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-sm font-semibold mb-8 hover:bg-blue-100 cursor-default transition-colors shadow-sm">
               <Sparkles className="w-4 h-4 text-blue-600" />
-              Nền tảng Giáo dục Thông minh 2.0
+              {tr("Nền tảng Giáo dục Thông minh 2.0")}
             </motion.div>
             
             <motion.h1 variants={fadeInUp} className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight mb-8 leading-[1.15]">
-              Quản lý khối lượng học tập <br className="hidden md:block" />
+              {tr("Quản lý khối lượng học tập")} <br className="hidden md:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
-                hiệu quả & khoa học.
+                {tr("hiệu quả & khoa học.")}
               </span>
             </motion.h1>
             
             <motion.p variants={fadeInUp} className="text-lg md:text-xl text-slate-600 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
-              ExamLoad Radar kết nối Giáo viên và Học sinh thông qua hệ thống Workmap tự động. Tối ưu hóa thời gian, cân bằng môn học và nâng cao hiệu suất ôn thi.
+              {tr("ExamLoad Radar kết nối Giáo viên và Học sinh thông qua hệ thống Workmap tự động. Tối ưu hóa thời gian, cân bằng môn học và nâng cao hiệu suất ôn thi.")}
             </motion.p>
             
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -106,14 +110,14 @@ export default function Home() {
                 href="/login?tab=signup"
                 className="group flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/40"
               >
-                Đăng ký tài khoản mới
+                {tr("Đăng ký tài khoản mới")}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link 
                 href="/login"
                 className="flex items-center justify-center w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-xl border border-slate-300 shadow-sm transition-all hover:-translate-y-1"
               >
-                Đăng nhập hệ thống
+                {tr("Đăng nhập hệ thống")}
               </Link>
             </motion.div>
           </motion.div>
@@ -192,7 +196,7 @@ export default function Home() {
                 </div>
                 <div>
                   <div className="text-2xl font-black text-slate-800">+34%</div>
-                  <div className="text-xs font-semibold text-slate-500">Hiệu suất học tập</div>
+                  <div className="text-xs font-semibold text-slate-500">{tr("Hiệu suất học tập")}</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -213,7 +217,7 @@ export default function Home() {
                 </div>
                 <div>
                   <div className="text-xl font-black text-slate-800">12 LU</div>
-                  <div className="text-xs font-semibold text-slate-500">Chỉ số Workmap</div>
+                  <div className="text-xs font-semibold text-slate-500">{tr("Chỉ số Workmap")}</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -234,19 +238,19 @@ export default function Home() {
         >
           <motion.div variants={fadeInUp} className="p-4 hover:-translate-y-2 transition-transform">
             <div className="text-4xl md:text-5xl font-black text-white mb-2">50K+</div>
-            <div className="text-blue-300 font-medium">Học sinh sử dụng</div>
+            <div className="text-blue-300 font-medium">{tr("Học sinh sử dụng")}</div>
           </motion.div>
           <motion.div variants={fadeInUp} className="p-4 hover:-translate-y-2 transition-transform">
             <div className="text-4xl md:text-5xl font-black text-white mb-2">2K+</div>
-            <div className="text-blue-300 font-medium">Giáo viên tin dùng</div>
+            <div className="text-blue-300 font-medium">{tr("Giáo viên tin dùng")}</div>
           </motion.div>
           <motion.div variants={fadeInUp} className="p-4 hover:-translate-y-2 transition-transform">
             <div className="text-4xl md:text-5xl font-black text-white mb-2">1M+</div>
-            <div className="text-blue-300 font-medium">Đề thi đã tạo</div>
+            <div className="text-blue-300 font-medium">{tr("Đề thi đã tạo")}</div>
           </motion.div>
           <motion.div variants={fadeInUp} className="p-4 hover:-translate-y-2 transition-transform">
             <div className="text-4xl md:text-5xl font-black text-white mb-2">99%</div>
-            <div className="text-blue-300 font-medium">Cải thiện điểm số</div>
+            <div className="text-blue-300 font-medium">{tr("Cải thiện điểm số")}</div>
           </motion.div>
         </motion.div>
       </section>
@@ -264,9 +268,9 @@ export default function Home() {
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-100 mb-4">
               <Zap className="w-6 h-6 text-indigo-600" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Tính năng đột phá</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">{tr("Tính năng đột phá")}</h2>
             <p className="text-slate-600 max-w-2xl mx-auto text-lg">
-              Hệ sinh thái giáo dục toàn diện, phân quyền thông minh dành riêng cho trường THPT.
+              {tr("Hệ sinh thái giáo dục toàn diện, phân quyền thông minh dành riêng cho trường THPT.")}
             </p>
           </motion.div>
           
@@ -286,9 +290,9 @@ export default function Home() {
                 <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
                   <BrainCircuit className="w-7 h-7 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">Workmap Thông Minh</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">{tr("Workmap Thông Minh")}</h3>
                 <p className="text-slate-600 leading-relaxed font-medium">
-                  Tự động lập lịch biểu học tập cá nhân hóa cho học sinh, trực quan hóa cường độ học tập bằng hệ số Load Units (LU).
+                  {tr("Tự động lập lịch biểu học tập cá nhân hóa cho học sinh, trực quan hóa cường độ học tập bằng hệ số Load Units (LU).")}
                 </p>
               </motion.div>
             </motion.div>
@@ -302,9 +306,9 @@ export default function Home() {
                 <div className="w-14 h-14 bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
                   <Target className="w-7 h-7 text-indigo-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors">Quản lý Đề Thi Đa Năng</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors">{tr("Quản lý Đề Thi Đa Năng")}</h3>
                 <p className="text-slate-600 leading-relaxed font-medium">
-                  Cung cấp công cụ thiết lập Quiz và Essay chuẩn xác, xuất file PDF cho Giáo viên ngay trên hệ thống. Tính toán thời gian tự động.
+                  {tr("Cung cấp công cụ thiết lập Quiz và Essay chuẩn xác, xuất file PDF cho Giáo viên ngay trên hệ thống. Tính toán thời gian tự động.")}
                 </p>
               </motion.div>
             </motion.div>
@@ -318,9 +322,9 @@ export default function Home() {
                 <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
                   <ShieldCheck className="w-7 h-7 text-emerald-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors">Phân Quyền Chi Tiết</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors">{tr("Phân Quyền Chi Tiết")}</h3>
                 <p className="text-slate-600 leading-relaxed font-medium">
-                  Tích hợp luồng Onboarding nhận diện Ban tự nhiên và Ban xã hội, tùy chỉnh giao diện riêng cho mỗi giáo viên và học sinh.
+                  {tr("Tích hợp luồng Onboarding nhận diện Ban tự nhiên và Ban xã hội, tùy chỉnh giao diện riêng cho mỗi giáo viên và học sinh.")}
                 </p>
               </motion.div>
             </motion.div>
@@ -344,9 +348,9 @@ export default function Home() {
               className="absolute -top-[50%] -right-[20%] w-[500px] h-[500px] border-[40px] border-white/5 rounded-full pointer-events-none"
             />
             
-            <h2 className="text-3xl md:text-5xl font-extrabold mb-6 relative z-10">Sẵn sàng để bứt phá điểm số?</h2>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-6 relative z-10">{tr("Sẵn sàng để bứt phá điểm số?")}</h2>
             <p className="text-blue-100 text-lg mb-10 max-w-2xl mx-auto font-medium relative z-10">
-              Tham gia cùng hàng ngàn giáo viên và học sinh đang sử dụng ExamLoad Radar mỗi ngày để tối ưu hóa quá trình dạy và học.
+              {tr("Tham gia cùng hàng ngàn giáo viên và học sinh đang sử dụng ExamLoad Radar mỗi ngày để tối ưu hóa quá trình dạy và học.")}
             </p>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block relative z-10">
               <Link 
@@ -354,7 +358,7 @@ export default function Home() {
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-lg hover:shadow-xl"
               >
                 <Users className="w-5 h-5" />
-                Tạo tài khoản miễn phí
+                {tr("Tạo tài khoản miễn phí")}
               </Link>
             </motion.div>
           </div>
@@ -372,23 +376,23 @@ export default function Home() {
               <span className="font-bold text-xl text-white tracking-tight">ExamLoad Radar</span>
             </div>
             <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-              Hệ thống Quản lý Khối lượng Học tập thông minh, giúp học sinh cân bằng cuộc sống và đạt kết quả cao trong các kỳ thi.
+              {tr("Hệ thống Quản lý Khối lượng Học tập thông minh, giúp học sinh cân bằng cuộc sống và đạt kết quả cao trong các kỳ thi.")}
             </p>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-6 uppercase tracking-wider text-sm">Sản phẩm</h4>
+            <h4 className="text-white font-bold mb-6 uppercase tracking-wider text-sm">{tr("Sản phẩm")}</h4>
             <ul className="space-y-4">
-              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Tính năng</Link></li>
-              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Bảng giá</Link></li>
-              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Hướng dẫn</Link></li>
+              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">{tr("Tính năng")}</Link></li>
+              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">{tr("Bảng giá")}</Link></li>
+              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">{tr("Hướng dẫn")}</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-6 uppercase tracking-wider text-sm">Công ty</h4>
+            <h4 className="text-white font-bold mb-6 uppercase tracking-wider text-sm">{tr("Công ty")}</h4>
             <ul className="space-y-4">
-              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Về chúng tôi</Link></li>
-              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Liên hệ</Link></li>
-              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Bảo mật</Link></li>
+              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">{tr("Về chúng tôi")}</Link></li>
+              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">{tr("Liên hệ")}</Link></li>
+              <li><Link href="#" className="text-slate-400 hover:text-white transition-colors text-sm">{tr("Bảo mật")}</Link></li>
             </ul>
           </div>
         </div>

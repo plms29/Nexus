@@ -1,4 +1,5 @@
 'use client';
+import { useTranslate, useLanguage } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
@@ -128,10 +129,14 @@ const stripMinutesFromName = (name: string): string =>
  * Bước mặc định lấy từ bộ mẫu dùng chung của engine, nên mọi dạng bài
  * (kể cả sơ đồ tư duy và thuyết trình) đều có tiến trình đúng khi AI chưa chạy hoặc lỗi.
  */
-const getInitialSteps = (type?: TaskType, isGroup = false): ProcessStepItem[] =>
+const getInitialSteps = (
+  type: TaskType | undefined,
+  isGroup: boolean,
+  tr: (text: string) => string
+): ProcessStepItem[] =>
   getTemplateSteps(type ?? 'essay', isGroup).map((s, i) => ({
     id: `p${i + 1}`,
-    stepName: `Bước ${i + 1}: ${s.name}`,
+    stepName: `${tr('Bước')} ${i + 1}: ${tr(s.name)}`,
     minutes: s.min,
     note: '',
   }));
@@ -228,6 +233,8 @@ export default function EssaySetup({
   onStepsChange,
   onOutlineChange
 }: EssaySetupProps) {
+  const tr = useTranslate();
+  const lang = useLanguage(s => s.lang);
   // Language & Analyzing State (Automatically detected from teacher subject)
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     detectLanguageFromSubject(subjectId)
@@ -243,14 +250,14 @@ export default function EssaySetup({
   const [languageNotes, setLanguageNotes] = useState<string>('');
 
   // Process Steps State
-  const [processSteps, setProcessSteps] = useState<ProcessStepItem[]>(() => getInitialSteps(taskType, isGroup));
+  const [processSteps, setProcessSteps] = useState<ProcessStepItem[]>(() => getInitialSteps(taskType, isGroup, tr));
 
   // Outline State
   const [outline, setOutline] = useState<OutlineItem[]>(() => getInitialOutline(taskType));
 
   // Update initial steps & outline when taskType changes
   useEffect(() => {
-    setProcessSteps(getInitialSteps(taskType, isGroup));
+    setProcessSteps(getInitialSteps(taskType, isGroup, tr));
     setOutline(getInitialOutline(taskType));
     setHasGeneratedOnce(false);
   }, [taskType, isGroup]);
@@ -289,7 +296,8 @@ export default function EssaySetup({
           subject: subjectId,
           classId,
           taskType,
-          language: selectedLanguage
+          language: selectedLanguage,
+          lang
         })
       });
       const data = await res.json();
@@ -297,12 +305,12 @@ export default function EssaySetup({
         if (data.steps && data.steps.length > 0) {
           const cleanedSteps = data.steps.map((s: ProcessStepItem) => ({
             ...s,
-            stepName: stripMinutesFromName(s.stepName),
+            stepName: tr(stripMinutesFromName(s.stepName)),
           }));
           setProcessSteps(withGroupCoordination(cleanedSteps, isGroup));
         }
-        if (data.outline && data.outline.length > 0) setOutline(data.outline);
-        if (data.languageNotes) setLanguageNotes(data.languageNotes);
+        if (data.outline && data.outline.length > 0) setOutline(data.outline.map((o: OutlineItem) => ({ ...o, text: tr(o.text) })));
+        if (data.languageNotes) setLanguageNotes(tr(data.languageNotes));
       }
     } catch (e) {
       console.error('Error analyzing with Gemini AI:', e);
@@ -351,7 +359,7 @@ export default function EssaySetup({
 
   // Đặt lại về khung chuẩn của đúng dạng bài đang chọn, không phải khung essay cố định
   const resetToStandardSteps = () => {
-    setProcessSteps(getInitialSteps(taskType, isGroup));
+    setProcessSteps(getInitialSteps(taskType, isGroup, tr));
   };
 
   return (
@@ -365,13 +373,13 @@ export default function EssaySetup({
           <div className="space-y-2 max-w-md mx-auto">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 font-extrabold text-xs border border-blue-200/80 shadow-sm">
               <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-              Trợ Lý AI Đang Phân Tích Đề Bài & Lập Kế Hoạch...
+              {tr("Trợ Lý AI Đang Phân Tích Đề Bài & Lập Kế Hoạch...")}
             </div>
             <h3 className="text-base font-black text-slate-900">
-              Tự Động Sinh Thời Gian & Khung Dàn Ý Chi Tiết
+              {tr("Tự Động Sinh Thời Gian & Khung Dàn Ý Chi Tiết")}
             </h3>
             <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-              Đang đọc đề bài <strong className="text-blue-900">"{title || 'Bài tập essay'}"</strong>, tính toán số phút phù hợp cho từng bước và sinh khung dàn ý...
+              {tr("Đang đọc đề bài")} <strong className="text-blue-900">"{title || tr("Bài tập essay")}"</strong>{tr(", tính toán số phút phù hợp cho từng bước và sinh khung dàn ý...")}
             </p>
           </div>
 
@@ -398,9 +406,9 @@ export default function EssaySetup({
             <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 flex items-start gap-3 text-xs font-semibold">
               <Globe className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <strong className="font-extrabold text-amber-950">Lưu ý phân bổ môn Ngoại Ngữ:</strong>
+                <strong className="font-extrabold text-amber-950">{tr("Lưu ý phân bổ môn Ngoại Ngữ:")}</strong>
                 <p className="mt-0.5 text-amber-800">
-                  Đối với bài viết Tiếng Anh/Ngoại ngữ, thời gian thực hiện được tự động điều chỉnh tăng (~30%) để hỗ trợ học sinh tra cứu từ vựng chuyên ngành, rà soát cấu trúc ngữ pháp (grammar) và liên kết mạch đoạn (Coherence & Cohesion).
+                  {tr("Đối với bài viết Tiếng Anh/Ngoại ngữ, thời gian thực hiện được tự động điều chỉnh tăng (~30%) để hỗ trợ học sinh tra cứu từ vựng chuyên ngành, rà soát cấu trúc ngữ pháp (grammar) và liên kết mạch đoạn (Coherence & Cohesion).")}
                 </p>
               </div>
             </div>
@@ -414,10 +422,10 @@ export default function EssaySetup({
               <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60">
                 <Clock className="w-4 h-4" />
               </div>
-              Phân Bổ Tiến Trình: {getTaskTypeLabel(taskType as TaskType)}
+              {tr("Phân Bổ Tiến Trình:")} {tr(getTaskTypeLabel(taskType as TaskType))}
             </h3>
             <p className="text-slate-500 text-xs font-semibold mt-1">
-              Định hình các bước thực hiện, thời gian hoàn thành lý tưởng và lưu ý giúp học sinh làm bài độc lập không lo tràn LU.
+              {tr("Định hình các bước thực hiện, thời gian hoàn thành lý tưởng và lưu ý giúp học sinh làm bài độc lập không lo tràn LU.")}
             </p>
           </div>
 
@@ -429,7 +437,7 @@ export default function EssaySetup({
               className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
             >
               {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-950" />}
-              {isAnalyzing ? 'Đang tạo...' : '✨ Generate Lại Bằng AI'}
+              {isAnalyzing ? tr("Đang tạo...") : tr("✨ Generate Lại Bằng AI")}
             </button>
 
             <button
@@ -439,13 +447,13 @@ export default function EssaySetup({
               title={`Đặt lại về khung thời gian chuẩn ${standardTotalMinutes} phút của dạng bài này`}
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-              Khung {standardTotalMinutes}p Chuẩn
+              Khung {standardTotalMinutes}{tr("p Chuẩn")}
             </button>
 
             <div className="bg-indigo-50/80 border border-indigo-100 px-4 py-2 rounded-2xl flex items-center gap-2.5 whitespace-nowrap shadow-sm">
               <Clock className="w-4 h-4 text-indigo-600" />
               <div className="text-xs text-slate-600 font-bold">
-                Tổng thời gian dự kiến: <strong className="text-indigo-700 text-sm font-black ml-1">{totalTimeString}</strong>
+                {tr("Tổng thời gian dự kiến:")} <strong className="text-indigo-700 text-sm font-black ml-1">{totalTimeString}</strong>
               </div>
             </div>
           </div>
@@ -455,10 +463,10 @@ export default function EssaySetup({
         <div className="space-y-2">
           <div className="hidden sm:grid grid-cols-[3rem_1fr_10rem_1fr_3rem] gap-3 px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
             <div className="text-center">STT</div>
-            <div>CÁC BƯỚC THỰC HIỆN (HỌC SINH)</div>
-            <div className="text-center">ƯỚC LƯỢNG THỜI GIAN</div>
-            <div>LƯU Ý / HƯỚNG DẪN KÈM THEO (LU)</div>
-            <div className="text-center">XÓA</div>
+            <div>{tr("CÁC BƯỚC THỰC HIỆN (HỌC SINH)")}</div>
+            <div className="text-center">{tr("ƯỚC LƯỢNG THỜI GIAN")}</div>
+            <div>{tr("LƯU Ý / HƯỚNG DẪN KÈM THEO (LU)")}</div>
+            <div className="text-center">{tr("XÓA")}</div>
           </div>
 
           <div className="space-y-2.5">
@@ -474,7 +482,7 @@ export default function EssaySetup({
                 <AutoResizingTextarea 
                   value={step.stepName}
                   onChange={(val) => updateProcessStep(step.id, 'stepName', val)}
-                  placeholder="Nhập tên bước..."
+                  placeholder={tr("Nhập tên bước...")}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 focus:ring-blue-500 placeholder:text-slate-400"
                 />
                 
@@ -488,13 +496,13 @@ export default function EssaySetup({
                     onWheel={(e) => e.currentTarget.blur()}
                     className="w-20 bg-white border border-slate-200 text-center font-black text-blue-600 rounded-xl py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
-                  <span className="text-slate-500 text-xs font-bold">phút</span>
+                  <span className="text-slate-500 text-xs font-bold">{tr("phút")}</span>
                 </div>
                 
                 <AutoResizingTextarea 
                   value={step.note}
                   onChange={(val) => updateProcessStep(step.id, 'note', val)}
-                  placeholder="Lưu ý hướng dẫn..."
+                  placeholder={tr("Lưu ý hướng dẫn...")}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 italic focus:ring-blue-500 placeholder:text-slate-400"
                 />
                 
@@ -518,7 +526,7 @@ export default function EssaySetup({
           className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200/80 text-slate-700 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Thêm Bước Lập Kế Hoạch
+          {tr("Thêm Bước Lập Kế Hoạch")}
         </button>
       </div>
 
@@ -530,10 +538,10 @@ export default function EssaySetup({
               <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200/60">
                 <FileText className="w-4 h-4" />
               </div>
-              Khung Dàn Ý Gợi Ý (Outline)
+              {tr("Khung Dàn Ý Gợi Ý (Outline)")}
             </h3>
             <p className="text-slate-500 text-xs font-semibold mt-1">
-              Các mốc định hướng bố cục giúp học sinh triển khai bài luận tuần tự & mạch lạc.
+              {tr("Các mốc định hướng bố cục giúp học sinh triển khai bài luận tuần tự & mạch lạc.")}
             </p>
           </div>
 
@@ -549,7 +557,7 @@ export default function EssaySetup({
                   : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
               )}
             >
-              <CheckCircle2 className="w-4 h-4" /> Duyệt / Thông Qua Outline
+              <CheckCircle2 className="w-4 h-4" /> {tr("Duyệt / Thông Qua Outline")}
             </button>
 
             <button
@@ -562,7 +570,7 @@ export default function EssaySetup({
                   : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
               )}
             >
-              <XCircle className="w-4 h-4" /> Không Thông Qua
+              <XCircle className="w-4 h-4" /> {tr("Không Thông Qua")}
             </button>
           </div>
         </div>
@@ -578,14 +586,14 @@ export default function EssaySetup({
             <>
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
-                <strong>Đã duyệt:</strong> Khung dàn ý hướng dẫn này sẽ được hiển thị chi tiết trên <strong>Workmap & Task của Học Sinh</strong> để chỉ dẫn viết essay.
+                <strong>{tr("Đã duyệt:")}</strong> {tr("Khung dàn ý hướng dẫn này sẽ được hiển thị chi tiết trên")} <strong>{tr("Workmap & Task của Học Sinh")}</strong> {tr("để chỉ dẫn viết essay.")}
               </span>
             </>
           ) : (
             <>
               <AlertCircle className="w-4 h-4 text-slate-500 shrink-0" />
               <span>
-                <strong>Chưa duyệt:</strong> Học sinh sẽ chỉ nhận lịch giao các bước làm bài trên Workmap mà không xem khung dàn ý chi tiết.
+                <strong>{tr("Chưa duyệt:")}</strong> {tr("Học sinh sẽ chỉ nhận lịch giao các bước làm bài trên Workmap mà không xem khung dàn ý chi tiết.")}
               </span>
             </>
           )}
@@ -615,7 +623,7 @@ export default function EssaySetup({
 
           {outline.length === 0 && (
             <div className="text-center py-6 text-slate-400 text-xs font-semibold border border-dashed border-slate-300 rounded-2xl bg-slate-50/50">
-              Chưa có dàn ý. Bấm "Phân Tích Bằng AI" để tự động sinh khung dàn ý.
+              {tr("Chưa có dàn ý. Bấm \"Phân Tích Bằng AI\" để tự động sinh khung dàn ý.")}
             </div>
           )}
         </div>
@@ -624,7 +632,7 @@ export default function EssaySetup({
         <div className="flex gap-2 pt-2 border-t border-slate-100">
           <input 
             type="text" 
-            placeholder="Ví dụ: Mở bài - Dẫn dắt vấn đề và phát biểu luận điểm..." 
+            placeholder={tr("Ví dụ: Mở bài - Dẫn dắt vấn đề và phát biểu luận điểm...")} 
             value={newOutlineText}
             onChange={(e) => setNewOutlineText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addOutlineItem())}
@@ -635,7 +643,7 @@ export default function EssaySetup({
             onClick={addOutlineItem}
             className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Thêm Mục Dàn Ý
+            <Plus className="w-4 h-4" /> {tr("Thêm Mục Dàn Ý")}
           </button>
         </div>
       </div>

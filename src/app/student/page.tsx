@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
+import { LanguageToggle } from '@/components/LanguageToggle';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   LogOut, 
@@ -82,6 +84,7 @@ const badgeStyles: Record<SubjectColor, string> = {
 };
 
 export default function StudentWorkmap() {
+  const tr = useTranslate();
   const router = useRouter();
   const { tasks, workmap, loadStudentData, studentProfile, setStudentProfile, quizResults } = useStore();
 
@@ -173,7 +176,7 @@ export default function StudentWorkmap() {
           const roundedLu = Math.round(rawLu * 10) / 10;
           taskBlocks.push({
             id: `${entry.task_id}-${entry.step_name || idx}`,
-            subject: (task.subject_id || 'MÔN HỌC').toUpperCase(),
+            subject: task.subject_id || 'MÔN HỌC',
             title: entry.step_name ? `${task.title} (${entry.step_name})` : task.title,
             lu: roundedLu,
             minutes: Number(entry.minutes) || Math.round(rawLu * 30),
@@ -196,7 +199,7 @@ export default function StudentWorkmap() {
             if (!alreadyAdded) {
               taskBlocks.push({
                 id: t.id,
-                subject: (t.subject_id || 'MÔN HỌC').toUpperCase(),
+                subject: t.subject_id || 'MÔN HỌC',
                 title: t.title,
                 lu: t.type === 'quiz' ? 1.5 : 2.5,
                 color: t.subject_id === 'Ngữ văn' ? 'blue' : t.subject_id === 'Tiếng Anh' ? 'purple' : t.type === 'quiz' ? 'yellow' : 'teal',
@@ -283,21 +286,21 @@ export default function StudentWorkmap() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight">
-                {studentProfile.name || 'Nguyễn Văn Học'}
+                {studentProfile.name || tr("Nguyễn Văn Học")}
               </h1>
               <button
                 type="button"
                 onClick={() => setShowOnboarding(true)}
-                title="Bấm để chỉnh sửa hồ sơ & đổi lớp học"
+                title={tr("Bấm để chỉnh sửa hồ sơ & đổi lớp học")}
                 className="text-[10px] font-black uppercase tracking-wider bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full cursor-pointer transition-all flex items-center gap-1 group"
               >
-                <span>{studentProfile.classId ? `Lớp ${studentProfile.classId}` : 'Chưa chọn lớp'}</span>
+                <span>{studentProfile.classId ? `${tr("Lớp")} ${studentProfile.classId}` : tr("Chưa chọn lớp")}</span>
                 <span className="text-[10px] text-blue-500 opacity-70 group-hover:opacity-100 transition-opacity">✏️</span>
               </button>
             </div>
             <p className="text-xs text-slate-500 font-semibold flex items-center gap-1.5 mt-0.5">
               <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
-              {studentProfile.school || 'THPT Chuyên Lê Quý Đôn'} {studentProfile.province ? `(${studentProfile.province})` : '(Đà Nẵng)'} • Học kỳ I
+              {studentProfile.school || tr("THPT Chuyên Lê Quý Đôn")} {studentProfile.province ? `(${studentProfile.province})` : tr("(Đà Nẵng)")} {tr("• Học kỳ I")}
             </p>
           </div>
         </div>
@@ -309,7 +312,7 @@ export default function StudentWorkmap() {
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm bài tập..." 
+              placeholder={tr("Tìm kiếm bài tập...")} 
               className="bg-slate-100 border border-slate-200 text-xs rounded-full pl-9 pr-4 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-56 transition-colors font-semibold"
             />
           </div>
@@ -320,15 +323,18 @@ export default function StudentWorkmap() {
             className="hidden sm:flex items-center gap-1.5 text-xs text-slate-600 font-bold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer"
           >
             <User className="w-3.5 h-3.5 text-blue-600" />
-            Hồ sơ học sinh
+            {tr("Hồ sơ học sinh")}
           </button>
+
+          <LanguageToggle />
+
 
           <button 
             onClick={() => router.push('/login')}
             className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-600 font-bold px-3 py-2 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
-            Đăng xuất
+            {tr("Đăng xuất")}
           </button>
         </div>
       </header>
@@ -349,7 +355,7 @@ export default function StudentWorkmap() {
               )}
             >
               <Calendar className="w-4 h-4" />
-              <span>Lịch Workmap Cá Nhân</span>
+              <span>{tr("Lịch Workmap Cá Nhân")}</span>
             </button>
 
             <button
@@ -363,7 +369,7 @@ export default function StudentWorkmap() {
               )}
             >
               <BookOpen className="w-4 h-4" />
-              <span>Làm Bài & Bài Tập</span>
+              <span>{tr("Làm Bài & Bài Tập")}</span>
               {tasks.length > 0 && (
                 <span className={clsx(
                   "px-2 py-0.5 rounded-full text-[10px] font-black",
@@ -383,11 +389,11 @@ export default function StudentWorkmap() {
               <div>
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                   <Calendar className="w-7 h-7 text-indigo-600" />
-                  Lịch Workmap Bài Tập Tự Học Cá Nhân
+                  {tr("Lịch Workmap Bài Tập Tự Học Cá Nhân")}
                 </h2>
                 <p className="text-slate-500 mt-1 text-xs flex items-center gap-2 font-semibold">
                   <Sparkles className="w-4 h-4 text-amber-500" />
-                  Bấm vào bài tập để <strong>Làm bài Trắc nghiệm Quiz</strong> hoặc <strong>Xem Khung Dàn Ý (Outline) Bài Luận</strong> do Giáo viên đã duyệt.
+                  {tr("Bấm vào bài tập để")} <strong>{tr("Làm bài Trắc nghiệm Quiz")}</strong> {tr("hoặc")} <strong>{tr("Xem Khung Dàn Ý (Outline) Bài Luận")}</strong> {tr("do Giáo viên đã duyệt.")}
                 </p>
               </div>
 
@@ -399,7 +405,7 @@ export default function StudentWorkmap() {
                   className="px-4 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer"
                 >
                   <Eye className="w-4 h-4" />
-                  <span>Chi Tiết Workmap & Tải LU</span>
+                  <span>{tr("Chi Tiết Workmap & Tải LU")}</span>
                 </button>
 
                 <div className="flex items-center gap-1.5 bg-slate-200/70 p-1.5 rounded-2xl border border-slate-300/60 shadow-2xs">
@@ -414,7 +420,7 @@ export default function StudentWorkmap() {
                     )}
                   >
                     <Clock className="w-3.5 h-3.5" />
-                    Gọn (1 ngày quá khứ)
+                    {tr("Gọn (1 ngày quá khứ)")}
                   </button>
 
                   <button
@@ -428,7 +434,7 @@ export default function StudentWorkmap() {
                     )}
                   >
                     <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                    Xem nhiều ngày hơn (Cả tuần)
+                    {tr("Xem nhiều ngày hơn (Cả tuần)")}
                   </button>
                 </div>
               </div>
@@ -451,7 +457,7 @@ export default function StudentWorkmap() {
                     : "bg-white text-slate-700 border-slate-200 shadow-xs"
                 )}>
                   <div className={clsx("text-[10px] font-black uppercase tracking-widest", col.isToday ? "text-indigo-200" : "text-slate-500")}>
-                    {col.dayName}
+                    {tr(col.dayName)}
                   </div>
                   <div className="text-2xl font-black mt-0.5 mb-1 tracking-tight">
                     {col.dateStr}
@@ -460,7 +466,7 @@ export default function StudentWorkmap() {
                   {/* Daily LU Workload Meter */}
                   <div className="w-full mt-1.5 pt-2 border-t border-slate-200/50 space-y-1">
                     <div className="flex items-center justify-between text-[10px] font-black px-1">
-                      <span className={col.isToday ? "text-indigo-100" : "text-slate-500"}>Tổng tải:</span>
+                      <span className={col.isToday ? "text-indigo-100" : "text-slate-500"}>{tr("Tổng tải:")}</span>
                       <span className={clsx(
                         isOverloaded ? "text-rose-500 font-bold" : isWarning ? "text-amber-500" : col.isToday ? "text-white" : "text-emerald-600"
                       )}>
@@ -480,7 +486,7 @@ export default function StudentWorkmap() {
 
                   {col.isToday && (
                     <div className="mt-2 bg-white/20 text-white text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider backdrop-blur-xs">
-                      Hôm nay
+                      {tr("Hôm nay")}
                     </div>
                   )}
                 </div>
@@ -489,7 +495,7 @@ export default function StudentWorkmap() {
                 <div className="flex flex-col gap-3">
                   {col.tasks.length === 0 ? (
                     <div className="border-2 border-dashed border-slate-200 rounded-2xl h-28 flex items-center justify-center bg-slate-50/50">
-                      <span className="text-slate-400 text-xs font-bold">Không có bài tập</span>
+                      <span className="text-slate-400 text-xs font-bold">{tr("Không có bài tập")}</span>
                     </div>
                   ) : (
                     col.tasks.map(task => {
@@ -520,7 +526,7 @@ export default function StudentWorkmap() {
                           )}
                         >
                           <div className="text-[10px] font-black uppercase opacity-90 mb-1 flex items-center justify-between">
-                            <span>{task.subject}</span>
+                            <span>{tr(task.subject).toUpperCase()}</span>
                             {task.isQuiz ? (
                               <span className="bg-amber-300 text-amber-950 text-[9px] px-1.5 py-0.5 rounded-md font-black flex items-center gap-1 shadow-2xs">
                                 <Play className="w-2.5 h-2.5 fill-amber-950" /> Quiz
@@ -538,7 +544,7 @@ export default function StudentWorkmap() {
 
                           {quizRes && (
                             <div className="mb-2 bg-emerald-900/40 text-emerald-100 text-[10px] font-black px-2 py-1 rounded-lg border border-emerald-300/30 flex items-center justify-between">
-                              <span>🎯 Đã làm bài</span>
+                              <span>{tr("🎯 Đã làm bài")}</span>
                               <span>{quizRes.score}/{quizRes.totalQuestions} ({quizRes.percentage}%)</span>
                             </div>
                           )}
@@ -548,7 +554,7 @@ export default function StudentWorkmap() {
                               {task.lu} LU ({task.minutes ?? Math.round(task.lu * 30)}m)
                             </div>
                             <span className="text-[10px] font-black underline opacity-90 group-hover:opacity-100 flex items-center gap-0.5">
-                              {task.isQuiz ? 'Vào làm ngay ➔' : 'Xem dàn ý ➔'}
+                              {task.isQuiz ? tr("Vào làm ngay ➔") : tr("Xem dàn ý ➔")}
                             </span>
                           </div>
                         </div>
@@ -572,13 +578,13 @@ export default function StudentWorkmap() {
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 text-blue-100 border border-white/30 px-3 py-1 rounded-full">
-                {studentProfile.classId ? `Lớp ${studentProfile.classId}` : 'Chưa chọn lớp'} • Hệ Thống Bài Tập
+                {studentProfile.classId ? `${tr("Lớp")} ${studentProfile.classId}` : tr("Chưa chọn lớp")} {tr("• Hệ Thống Bài Tập")}
               </span>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-2">
-                Danh Sách Bài Tập & Giao Diện Làm Bài
+                {tr("Danh Sách Bài Tập & Giao Diện Làm Bài")}
               </h2>
               <p className="text-blue-100 text-xs sm:text-sm font-semibold mt-1 max-w-2xl">
-                Lựa chọn bài tập để tiến hành làm trắc nghiệm Quiz trực tiếp hoặc xem dàn ý chi tiết bài luận Essay do Giáo viên đã phê duyệt.
+                {tr("Lựa chọn bài tập để tiến hành làm trắc nghiệm Quiz trực tiếp hoặc xem dàn ý chi tiết bài luận Essay do Giáo viên đã phê duyệt.")}
               </p>
             </div>
 
@@ -587,8 +593,8 @@ export default function StudentWorkmap() {
                 {filteredAssignments.length}
               </div>
               <div className="text-xs">
-                <div className="font-extrabold text-white">Tổng bài tập được giao</div>
-                <div className="text-blue-200">Cho Lớp {studentProfile.classId || '—'}</div>
+                <div className="font-extrabold text-white">{tr("Tổng bài tập được giao")}</div>
+                <div className="text-blue-200">{tr("Cho Lớp")} {studentProfile.classId || '—'}</div>
               </div>
             </div>
           </div>
@@ -602,7 +608,7 @@ export default function StudentWorkmap() {
               type="text"
               value={assignmentsSearch}
               onChange={(e) => setAssignmentsSearch(e.target.value)}
-              placeholder="Tìm tên bài tập..."
+              placeholder={tr("Tìm tên bài tập...")}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
@@ -613,7 +619,7 @@ export default function StudentWorkmap() {
               onChange={(e) => setAssignmentsFilterType(e.target.value)}
               className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="all">Tất cả loại bài tập</option>
+              <option value="all">{tr("Tất cả loại bài tập")}</option>
               {TASK_TYPE_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -624,9 +630,9 @@ export default function StudentWorkmap() {
               onChange={(e) => setAssignmentsFilterStatus(e.target.value)}
               className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="pending">⏳ Chưa làm bài</option>
-              <option value="completed">✅ Đã làm bài</option>
+              <option value="all">{tr("Tất cả trạng thái")}</option>
+              <option value="pending">{tr("⏳ Chưa làm bài")}</option>
+              <option value="completed">{tr("✅ Đã làm bài")}</option>
             </select>
           </div>
         </div>
@@ -637,11 +643,11 @@ export default function StudentWorkmap() {
             <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-2xl">
               📚
             </div>
-            <h3 className="text-lg font-black text-slate-900">Không tìm thấy bài tập nào</h3>
+            <h3 className="text-lg font-black text-slate-900">{tr("Không tìm thấy bài tập nào")}</h3>
             <p className="text-xs text-slate-500 font-semibold max-w-md mx-auto">
               {tasks.length === 0 
-                ? `Lớp ${studentProfile.classId} hiện chưa có bài tập nào được giao từ giáo viên trên hệ thống database.`
-                : 'Không có bài tập nào phù hợp với bộ lọc đã chọn.'}
+                ? `${tr("Lớp")} ${studentProfile.classId} ${tr("hiện chưa có bài tập nào được giao từ giáo viên trên hệ thống database.")}`
+                : tr("Không có bài tập nào phù hợp với bộ lọc đã chọn.")}
             </p>
           </div>
         ) : (
@@ -662,7 +668,7 @@ export default function StudentWorkmap() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg">
-                        {task.subject_id || 'MÔN HỌC'}
+                        {tr(task.subject_id) || tr("MÔN HỌC")}
                       </span>
                       <span className={clsx(
                         "text-[10px] font-black px-2.5 py-1 rounded-lg border flex items-center gap-1",
@@ -670,7 +676,7 @@ export default function StudentWorkmap() {
                           ? "bg-amber-50 text-amber-800 border-amber-200" 
                           : "bg-indigo-50 text-indigo-800 border-indigo-200"
                       )}>
-                        {task.type === 'quiz' ? '🎯 ' : '📝 '}{getTaskTypeLabel(task.type)}
+                        {task.type === 'quiz' ? '🎯 ' : '📝 '}{tr(getTaskTypeLabel(task.type))}
                       </span>
                     </div>
 
@@ -679,18 +685,18 @@ export default function StudentWorkmap() {
                         {task.title}
                       </h3>
                       <p className="text-xs text-slate-500 font-semibold mt-1 flex items-center gap-2">
-                        <span>Lớp {task.class_id}</span>
+                        <span>{tr("Lớp")} {task.class_id}</span>
                         <span>•</span>
                         <span className="flex items-center gap-1 text-slate-600">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          Hạn nộp: {task.deadline || 'Không giới hạn'}
+                          {tr("Hạn nộp:")} {task.deadline || tr("Không giới hạn")}
                         </span>
                       </p>
                     </div>
 
                     {isDone && (
                       <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-3 text-xs font-bold flex items-center justify-between">
-                        <span>🎯 Đã hoàn thành</span>
+                        <span>{tr("🎯 Đã hoàn thành")}</span>
                         <span className="font-black text-emerald-700">{quizRes.score}/{quizRes.totalQuestions} ({quizRes.percentage}%)</span>
                       </div>
                     )}
@@ -700,7 +706,7 @@ export default function StudentWorkmap() {
                     <span className="text-xs font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
                       {taskMinutes > 0
                         ? `${calculateLU(taskMinutes)} LU (${taskMinutes} phút)`
-                        : 'Chưa xếp lịch'}
+                        : tr("Chưa xếp lịch")}
                     </span>
 
                     <button
@@ -725,12 +731,12 @@ export default function StudentWorkmap() {
                       {task.type === 'quiz' ? (
                         <>
                           <Play className="w-3.5 h-3.5 fill-white" />
-                          <span>{isDone ? 'Làm lại Quiz' : 'Vào làm ngay'}</span>
+                          <span>{isDone ? tr("Làm lại Quiz") : tr("Vào làm ngay")}</span>
                         </>
                       ) : (
                         <>
                           <FileText className="w-3.5 h-3.5" />
-                          <span>Xem Dàn Ý Essay</span>
+                          <span>{tr("Xem Dàn Ý Essay")}</span>
                         </>
                       )}
                     </button>
@@ -806,10 +812,10 @@ export default function StudentWorkmap() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[10px] font-black uppercase tracking-wider bg-blue-500/30 text-blue-200 border border-blue-400/30 px-2.5 py-0.5 rounded-full">
-                        Môn {selectedEssayTask.subject}
+                        {tr("Môn")} {tr(selectedEssayTask.subject)}
                       </span>
                       <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2.5 py-0.5 rounded-full">
-                        Bài Luận Essay
+                        {tr("Bài Luận Essay")}
                       </span>
                     </div>
                     <h2 className="text-xl font-black tracking-tight text-white mt-1">
@@ -833,13 +839,13 @@ export default function StudentWorkmap() {
                 <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
                   <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-blue-600" />
-                    Tiến Trình Thực Hiện Tự Học (Giáo Viên Đã Phân Bổ)
+                    {tr("Tiến Trình Thực Hiện Tự Học (Giáo Viên Đã Phân Bổ)")}
                   </h3>
 
                   <div className="space-y-2">
                     {processSteps.length === 0 ? (
                       <div className="p-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-xs font-semibold text-slate-500 text-center">
-                        Chưa có thông tin phân bổ tiến trình thực hiện cho bài tập này trong cơ sở dữ liệu.
+                        {tr("Chưa có thông tin phân bổ tiến trình thực hiện cho bài tập này trong cơ sở dữ liệu.")}
                       </div>
                     ) : (
                       processSteps.map((step, i) => (
@@ -854,7 +860,7 @@ export default function StudentWorkmap() {
                             </div>
                           </div>
                           <span className="text-xs font-black text-blue-600 bg-white border border-blue-100 px-2.5 py-1 rounded-lg shrink-0">
-                            {step.minutes} phút
+                            {step.minutes} {tr("phút")}
                           </span>
                         </div>
                       ))
@@ -867,7 +873,7 @@ export default function StudentWorkmap() {
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                       <FileText className="w-4 h-4 text-indigo-600" />
-                      Khung Dàn Ý Gợi Ý Chi Tiết (AI Outline)
+                      {tr("Khung Dàn Ý Gợi Ý Chi Tiết (AI Outline)")}
                     </h3>
 
                     <span className={clsx(
@@ -876,7 +882,7 @@ export default function StudentWorkmap() {
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
                         : "bg-slate-100 text-slate-600 border-slate-200"
                     )}>
-                      {isOutlineApproved ? '🟢 Đã Độc Quyền Duyệt Bởi Giáo Viên' : '⚪ Chưa Thông Qua Outline'}
+                      {isOutlineApproved ? tr("🟢 Đã Độc Quyền Duyệt Bởi Giáo Viên") : tr("⚪ Chưa Thông Qua Outline")}
                     </span>
                   </div>
 
@@ -884,12 +890,12 @@ export default function StudentWorkmap() {
                     <div className="space-y-2.5">
                       {outlineItems.length === 0 ? (
                         <div className="text-center py-6 text-slate-500 text-xs font-semibold border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                          Chưa có dàn ý chi tiết trong cơ sở dữ liệu cho bài tập này.
+                          {tr("Chưa có dàn ý chi tiết trong cơ sở dữ liệu cho bài tập này.")}
                         </div>
                       ) : (
                         <>
                           <p className="text-xs text-slate-500 font-semibold mb-3">
-                            Tích chọn từng mục dàn ý khi em đã triển khai xong đoạn văn tương ứng trong bài essay:
+                            {tr("Tích chọn từng mục dàn ý khi em đã triển khai xong đoạn văn tương ứng trong bài essay:")}
                           </p>
 
                           {outlineItems.map((item, idx) => {
@@ -919,7 +925,7 @@ export default function StudentWorkmap() {
                     </div>
                   ) : (
                     <div className="text-center py-6 text-slate-400 text-xs font-semibold border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                      Giáo viên lựa chọn không hiển thị khung dàn ý cho bài tập này. Học sinh tự do triển khai bài viết theo ý tưởng cá nhân.
+                      {tr("Giáo viên lựa chọn không hiển thị khung dàn ý cho bài tập này. Học sinh tự do triển khai bài viết theo ý tưởng cá nhân.")}
                     </div>
                   )}
                 </div>
@@ -932,7 +938,7 @@ export default function StudentWorkmap() {
                   onClick={() => setSelectedEssayTask(null)}
                   className="px-6 py-2 rounded-xl bg-slate-900 text-white text-xs font-extrabold hover:bg-slate-800 transition-all cursor-pointer shadow-sm"
                 >
-                  Đóng
+                  {tr("Đóng")}
                 </button>
               </div>
             </motion.div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { 
@@ -80,6 +81,7 @@ const mapLevelStringToCode = (val: string): 'l1' | 'l2' | 'l3' | 'l4' => {
 };
 
 export default function QuestionBank() {
+  const tr = useTranslate();
   const { classes, subjects } = useStore();
 
   // State: Packages List
@@ -166,7 +168,7 @@ export default function QuestionBank() {
       setNewPkgDesc('');
       handleOpenPackage(res.data);
     } else {
-      alert('Lỗi tạo gói câu hỏi trên Supabase!');
+      alert(tr("Lỗi tạo gói câu hỏi trên Supabase!"));
     }
   };
 
@@ -184,7 +186,7 @@ export default function QuestionBank() {
       }
       setDeletingPkgId(null);
     } else {
-      alert('Lỗi xóa gói câu hỏi!');
+      alert(tr("Lỗi xóa gói câu hỏi!"));
     }
   };
 
@@ -267,21 +269,21 @@ export default function QuestionBank() {
       setIsAddQuestionOpen(false);
       setEditingQuestion(null);
     } else {
-      alert('Lỗi lưu câu hỏi vào Supabase!');
+      alert(tr("Lỗi lưu câu hỏi vào Supabase!"));
     }
   };
 
   // Delete Question
   const handleDeleteQuestion = async (qId?: string) => {
     if (!qId || !activePackage) return;
-    if (!confirm('Bạn có chắc chắn muốn xóa câu hỏi này khỏi gói?')) return;
+    if (!confirm(tr("Bạn có chắc chắn muốn xóa câu hỏi này khỏi gói?"))) return;
 
     const res = await deleteQuestionFromDb(qId);
     if (res.success) {
       setPackageQuestions(prev => prev.filter(q => q.id !== qId));
       setPackages(prev => prev.map(p => p.id === activePackage.id ? { ...p, questions_count: Math.max(0, (p.questions_count || 1) - 1) } : p));
     } else {
-      alert('Lỗi xóa câu hỏi!');
+      alert(tr("Lỗi xóa câu hỏi!"));
     }
   };
 
@@ -318,7 +320,7 @@ export default function QuestionBank() {
         const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
 
         if (lines.length <= 1) {
-          alert('File CSV trống hoặc không chứa dữ liệu câu hỏi!');
+          alert(tr("File CSV trống hoặc không chứa dữ liệu câu hỏi!"));
           setIsUploadingCsv(false);
           return;
         }
@@ -347,7 +349,7 @@ export default function QuestionBank() {
         }
 
         if (newQuestions.length === 0) {
-          alert('Không tìm thấy câu hỏi hợp lệ nào trong file CSV!');
+          alert(tr("Không tìm thấy câu hỏi hợp lệ nào trong file CSV!"));
           setIsUploadingCsv(false);
           return;
         }
@@ -365,7 +367,7 @@ export default function QuestionBank() {
         alert(`Đã tải lên thành công ${successCount} câu hỏi vào gói "${activePackage.title}"!`);
       } catch (err) {
         console.error('Lỗi đọc file CSV:', err);
-        alert('Lỗi khi đọc file CSV. Vui lòng kiểm tra lại định dạng file!');
+        alert(tr("Lỗi khi đọc file CSV. Vui lòng kiểm tra lại định dạng file!"));
       } finally {
         setIsUploadingCsv(false);
         e.target.value = '';
@@ -389,7 +391,7 @@ export default function QuestionBank() {
         const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
 
         if (lines.length <= 1) {
-          alert('File CSV trống hoặc không chứa dữ liệu câu hỏi!');
+          alert(tr("File CSV trống hoặc không chứa dữ liệu câu hỏi!"));
           setIsUploadingCsv(false);
           return;
         }
@@ -405,7 +407,7 @@ export default function QuestionBank() {
         });
 
         if (!pkgRes.success || !pkgRes.data) {
-          alert('Lỗi tạo gói câu hỏi mới trên Supabase!');
+          alert(tr("Lỗi tạo gói câu hỏi mới trên Supabase!"));
           setIsUploadingCsv(false);
           return;
         }
@@ -436,7 +438,7 @@ export default function QuestionBank() {
         }
 
         if (newQuestions.length === 0) {
-          alert('Không tìm thấy câu hỏi hợp lệ nào trong file CSV!');
+          alert(tr("Không tìm thấy câu hỏi hợp lệ nào trong file CSV!"));
           setIsUploadingCsv(false);
           return;
         }
@@ -453,7 +455,7 @@ export default function QuestionBank() {
         alert(`Đã tự động khởi tạo gói "${newPkg.title}" và tải lên ${successCount} câu hỏi thành công!`);
       } catch (err) {
         console.error('Lỗi đọc file CSV:', err);
-        alert('Lỗi khi đọc file CSV. Vui lòng kiểm tra lại định dạng file!');
+        alert(tr("Lỗi khi đọc file CSV. Vui lòng kiểm tra lại định dạng file!"));
       } finally {
         setIsUploadingCsv(false);
         e.target.value = '';
@@ -481,11 +483,11 @@ export default function QuestionBank() {
                   <Folder className="w-5 h-5" />
                 </div>
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                  Ngân Hàng Gói Câu Hỏi Đề Thi
+                  {tr("Ngân Hàng Gói Câu Hỏi Đề Thi")}
                 </h2>
               </div>
               <p className="text-xs font-semibold text-slate-500">
-                Kho dữ liệu gói câu hỏi riêng của giáo viên, nhập dữ liệu từ file CSV mẫu và lưu trữ trực tiếp trên hệ thống Supabase.
+                {tr("Kho dữ liệu gói câu hỏi riêng của giáo viên, nhập dữ liệu từ file CSV mẫu và lưu trữ trực tiếp trên hệ thống Supabase.")}
               </p>
             </div>
 
@@ -495,12 +497,12 @@ export default function QuestionBank() {
                 onClick={handleDownloadCsvTemplate}
                 className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors flex items-center gap-2 border border-slate-200/80 cursor-pointer shadow-sm"
               >
-                <Download className="w-4 h-4 text-emerald-600" /> Tải Template CSV Mẫu
+                <Download className="w-4 h-4 text-emerald-600" /> {tr("Tải Template CSV Mẫu")}
               </button>
 
               <label className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-500/20">
                 <Upload className="w-4 h-4" />
-                {isUploadingCsv ? 'Đang tạo gói...' : 'Upload CSV ➔ Tự Tạo Gói Mới'}
+                {isUploadingCsv ? tr("Đang tạo gói...") : tr("Upload CSV ➔ Tự Tạo Gói Mới")}
                 <input 
                   type="file" 
                   accept=".csv" 
@@ -515,7 +517,7 @@ export default function QuestionBank() {
                 onClick={() => setIsCreatePkgOpen(true)}
                 className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer"
               >
-                <FolderPlus className="w-4 h-4" /> Tạo Gói Câu Hỏi Mới
+                <FolderPlus className="w-4 h-4" /> {tr("Tạo Gói Câu Hỏi Mới")}
               </button>
             </div>
           </div>
@@ -523,16 +525,16 @@ export default function QuestionBank() {
           {/* Packages List Grid */}
           {isLoadingPackages ? (
             <div className="text-center py-16 text-xs font-extrabold text-slate-400">
-              Đang tải danh sách gói câu hỏi từ Supabase...
+              {tr("Đang tải danh sách gói câu hỏi từ Supabase...")}
             </div>
           ) : packages.length === 0 ? (
             <div className="text-center py-16 bg-slate-50/60 rounded-3xl border border-dashed border-slate-200 space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100">
                 <FolderPlus className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-slate-800 text-base">Chưa có gói câu hỏi nào</h3>
+              <h3 className="font-extrabold text-slate-800 text-base">{tr("Chưa có gói câu hỏi nào")}</h3>
               <p className="text-xs text-slate-500 font-semibold max-w-sm mx-auto">
-                Hãy bấm nút "Tạo Gói Câu Hỏi Mới" hoặc "Upload CSV &rarr; Tự Tạo Gói Mới" ở trên.
+                {tr("Hãy bấm nút \"Tạo Gói Câu Hỏi Mới\" hoặc \"Upload CSV &rarr; Tự Tạo Gói Mới\" ở trên.")}
               </p>
             </div>
           ) : (
@@ -547,10 +549,10 @@ export default function QuestionBank() {
                     {/* Top Badges */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span className="px-2.5 py-1 rounded-xl text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80">
-                        Môn {pkg.subject}
+                        {tr("Môn")} {tr(pkg.subject)}
                       </span>
                       <span className="px-2.5 py-1 rounded-xl text-xs font-extrabold bg-slate-100 text-slate-600 border border-slate-200/80">
-                        Kho riêng giáo viên
+                        {tr("Kho riêng giáo viên")}
                       </span>
                     </div>
 
@@ -571,7 +573,7 @@ export default function QuestionBank() {
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div className="text-xs font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 flex items-center gap-1.5">
                       <HelpCircle className="w-3.5 h-3.5" />
-                      <span>{pkg.questions_count || 0} câu hỏi</span>
+                      <span>{pkg.questions_count || 0} {tr("câu hỏi")}</span>
                     </div>
 
                     <button
@@ -581,7 +583,7 @@ export default function QuestionBank() {
                         setDeletingPkgId(pkg.id);
                       }}
                       className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                      title="Xóa gói câu hỏi này"
+                      title={tr("Xóa gói câu hỏi này")}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -601,7 +603,7 @@ export default function QuestionBank() {
                 type="button"
                 onClick={() => { setActivePackage(null); loadPackages(); }}
                 className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-                title="Quay lại danh sách gói"
+                title={tr("Quay lại danh sách gói")}
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -611,11 +613,11 @@ export default function QuestionBank() {
                     {activePackage.title}
                   </h2>
                   <span className="px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
-                    Môn {activePackage.subject}
+                    {tr("Môn")} {tr(activePackage.subject)}
                   </span>
                 </div>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                  Tổng số câu trong gói: <strong className="text-slate-900">{packageQuestions.length} câu</strong>. Đã đồng bộ Supabase DB.
+                  {tr("Tổng số câu trong gói:")} <strong className="text-slate-900">{packageQuestions.length} {tr("câu")}</strong>{tr(". Đã đồng bộ Supabase DB.")}
                 </p>
               </div>
             </div>
@@ -627,12 +629,12 @@ export default function QuestionBank() {
                 onClick={handleDownloadCsvTemplate}
                 className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors flex items-center gap-1.5 border border-slate-200 cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5 text-emerald-600" /> Tải Template CSV
+                <Download className="w-3.5 h-3.5 text-emerald-600" /> {tr("Tải Template CSV")}
               </button>
 
               <label className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20">
                 <Upload className="w-3.5 h-3.5" />
-                {isUploadingCsv ? 'Đang đọc CSV...' : 'Upload File CSV'}
+                {isUploadingCsv ? tr("Đang đọc CSV...") : 'Upload File CSV'}
                 <input 
                   type="file" 
                   accept=".csv" 
@@ -647,7 +649,7 @@ export default function QuestionBank() {
                 onClick={() => handleStartQuestionForm()}
                 className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 flex items-center gap-1.5 cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Thêm Câu Hỏi Thủ Công
+                <Plus className="w-4 h-4" /> {tr("Thêm Câu Hỏi Thủ Công")}
               </button>
             </div>
           </div>
@@ -655,11 +657,11 @@ export default function QuestionBank() {
           {/* Difficulty Filter Tabs */}
           <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-200 overflow-x-auto">
             {[
-              { id: 'all', label: `Tất cả (${packageQuestions.length})` },
-              { id: 'l1', label: `Nhận biết (${packageQuestions.filter(q => q.level === 'l1').length})` },
-              { id: 'l2', label: `Thông hiểu (${packageQuestions.filter(q => q.level === 'l2').length})` },
-              { id: 'l3', label: `Vận dụng (${packageQuestions.filter(q => q.level === 'l3').length})` },
-              { id: 'l4', label: `Vận dụng cao (${packageQuestions.filter(q => q.level === 'l4').length})` },
+              { id: 'all', label: `${tr('Tất cả')} (${packageQuestions.length})` },
+              { id: 'l1', label: `${tr('Nhận biết')} (${packageQuestions.filter(q => q.level === 'l1').length})` },
+              { id: 'l2', label: `${tr('Thông hiểu')} (${packageQuestions.filter(q => q.level === 'l2').length})` },
+              { id: 'l3', label: `${tr('Vận dụng')} (${packageQuestions.filter(q => q.level === 'l3').length})` },
+              { id: 'l4', label: `${tr('Vận dụng cao')} (${packageQuestions.filter(q => q.level === 'l4').length})` },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -680,12 +682,12 @@ export default function QuestionBank() {
           {/* Questions List Render */}
           {isLoadingQuestions ? (
             <div className="text-center py-12 text-xs font-extrabold text-slate-400">
-              Đang tải danh sách câu hỏi trong gói...
+              {tr("Đang tải danh sách câu hỏi trong gói...")}
             </div>
           ) : filteredPackageQuestions.length === 0 ? (
             <div className="text-center py-12 bg-slate-50/60 rounded-3xl border border-dashed border-slate-200 text-slate-500 text-xs font-bold space-y-2">
-              <p>Gói câu hỏi này chưa có dữ liệu ở mức độ đã chọn.</p>
-              <p className="text-[11px] text-slate-400">Bạn có thể bấm "Upload File CSV" hoặc "Thêm Câu Hỏi Thủ Công" để bổ sung.</p>
+              <p>{tr("Gói câu hỏi này chưa có dữ liệu ở mức độ đã chọn.")}</p>
+              <p className="text-[11px] text-slate-400">{tr("Bạn có thể bấm \"Upload File CSV\" hoặc \"Thêm Câu Hỏi Thủ Công\" để bổ sung.")}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -705,7 +707,7 @@ export default function QuestionBank() {
                         <div>
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className={clsx("text-xs font-extrabold px-2.5 py-0.5 rounded-lg border", diffMeta.bg, diffMeta.color)}>
-                              {diffMeta.title}
+                              {tr(diffMeta.title)}
                             </span>
                           </div>
                           <div className="font-extrabold text-slate-900 text-base leading-relaxed">
@@ -715,7 +717,7 @@ export default function QuestionBank() {
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={q.image_url}
-                              alt="Ảnh minh họa câu hỏi"
+                              alt={tr("Ảnh minh họa câu hỏi")}
                               className="mt-3 max-h-56 w-auto rounded-xl border border-slate-200 object-contain"
                             />
                           )}
@@ -727,7 +729,7 @@ export default function QuestionBank() {
                           type="button"
                           onClick={() => handleStartQuestionForm(q)}
                           className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                          title="Sửa câu hỏi"
+                          title={tr("Sửa câu hỏi")}
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
@@ -735,7 +737,7 @@ export default function QuestionBank() {
                           type="button"
                           onClick={() => handleDeleteQuestion(q.id)}
                           className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                          title="Xóa câu hỏi"
+                          title={tr("Xóa câu hỏi")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -778,7 +780,7 @@ export default function QuestionBank() {
                     {/* Explanation */}
                     {q.explanation && (
                       <div className="text-xs text-slate-600 font-medium bg-slate-50 p-3 rounded-xl border border-slate-100 ml-9">
-                        <strong className="text-slate-800 font-extrabold uppercase text-[10px] block mb-1">Giải thích đáp án đúng:</strong>
+                        <strong className="text-slate-800 font-extrabold uppercase text-[10px] block mb-1">{tr("Giải thích đáp án đúng:")}</strong>
                         {q.explanation}
                       </div>
                     )}
@@ -809,7 +811,7 @@ export default function QuestionBank() {
             >
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                  <FolderPlus className="w-5 h-5 text-blue-600" /> Tạo Gói Câu Hỏi Mới
+                  <FolderPlus className="w-5 h-5 text-blue-600" /> {tr("Tạo Gói Câu Hỏi Mới")}
                 </h3>
                 <button
                   type="button"
@@ -822,19 +824,19 @@ export default function QuestionBank() {
 
               <form onSubmit={handleCreatePackageSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Tên Gói Câu Hỏi</label>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Tên Gói Câu Hỏi")}</label>
                   <input
                     type="text"
                     value={newPkgTitle}
                     onChange={e => setNewPkgTitle(e.target.value)}
                     required
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="VD: Bộ 100 câu Trắc nghiệm Toán 10 - Chương 1"
+                    placeholder={tr("VD: Bộ 100 câu Trắc nghiệm Toán 10 - Chương 1")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Bộ môn</label>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Bộ môn")}</label>
                   <select
                     value={newPkgSubject}
                     onChange={e => setNewPkgSubject(e.target.value)}
@@ -847,13 +849,13 @@ export default function QuestionBank() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Mô tả ngắn (Không bắt buộc)</label>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Mô tả ngắn (Không bắt buộc)")}</label>
                   <textarea
                     value={newPkgDesc}
                     onChange={e => setNewPkgDesc(e.target.value)}
                     rows={3}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="Nhập mô tả về nội dung gói câu hỏi..."
+                    placeholder={tr("Nhập mô tả về nội dung gói câu hỏi...")}
                   />
                 </div>
 
@@ -863,14 +865,14 @@ export default function QuestionBank() {
                     onClick={() => setIsCreatePkgOpen(false)}
                     className="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100"
                   >
-                    Hủy
+                    {tr("Hủy")}
                   </button>
                   <button
                     type="submit"
                     disabled={isSavingPkg}
                     className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md flex items-center gap-2"
                   >
-                    <FolderPlus className="w-4 h-4" /> {isSavingPkg ? 'Đang lưu...' : 'Tạo Gói Câu Hỏi'}
+                    <FolderPlus className="w-4 h-4" /> {isSavingPkg ? tr("Đang lưu...") : tr("Tạo Gói Câu Hỏi")}
                   </button>
                 </div>
               </form>
@@ -900,9 +902,9 @@ export default function QuestionBank() {
                 <Trash2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900">Xóa Gói Câu Hỏi Này?</h3>
+                <h3 className="text-lg font-black text-slate-900">{tr("Xóa Gói Câu Hỏi Này?")}</h3>
                 <p className="text-xs text-slate-500 font-semibold mt-1">
-                  Toàn bộ câu hỏi nằm trong gói này sẽ bị xóa khỏi Supabase.
+                  {tr("Toàn bộ câu hỏi nằm trong gói này sẽ bị xóa khỏi Supabase.")}
                 </p>
               </div>
 
@@ -912,7 +914,7 @@ export default function QuestionBank() {
                   onClick={() => setDeletingPkgId(null)}
                   className="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100"
                 >
-                  Hủy bỏ
+                  {tr("Hủy bỏ")}
                 </button>
                 <button
                   type="button"
@@ -920,7 +922,7 @@ export default function QuestionBank() {
                   disabled={isDeletingPkg}
                   className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-md flex items-center gap-2"
                 >
-                  <Trash2 className="w-4 h-4" /> {isDeletingPkg ? 'Đang xóa...' : 'Xóa Gói'}
+                  <Trash2 className="w-4 h-4" /> {isDeletingPkg ? tr("Đang xóa...") : tr("Xóa Gói")}
                 </button>
               </div>
             </motion.div>
@@ -948,7 +950,7 @@ export default function QuestionBank() {
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-600" />
-                  {editingQuestion ? 'Sửa Câu Hỏi Trong Gói' : 'Thêm Câu Hỏi Mới Vào Gói'}
+                  {editingQuestion ? tr("Sửa Câu Hỏi Trong Gói") : tr("Thêm Câu Hỏi Mới Vào Gói")}
                 </h3>
                 <button
                   type="button"
@@ -961,21 +963,21 @@ export default function QuestionBank() {
 
               <form onSubmit={handleSaveQuestionSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase">Nội dung câu hỏi / Đề bài</label>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase">{tr("Nội dung câu hỏi / Đề bài")}</label>
                   <textarea
                     value={qText}
                     onChange={e => setQText(e.target.value)}
                     required
                     rows={3}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="Nhập đề bài câu hỏi..."
+                    placeholder={tr("Nhập đề bài câu hỏi...")}
                   />
                 </div>
 
                 {/* Ảnh minh họa cho đề bài (biểu đồ, hình vẽ, bài toán thực tế...) */}
                 <div className="space-y-2">
                   <label className="block text-xs font-extrabold text-slate-700 uppercase">
-                    Ảnh minh họa <span className="text-slate-400 font-bold normal-case">(không bắt buộc)</span>
+                    {tr("Ảnh minh họa")} <span className="text-slate-400 font-bold normal-case">{tr("(không bắt buộc)")}</span>
                   </label>
 
                   <input
@@ -991,7 +993,7 @@ export default function QuestionBank() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={qImageUrl}
-                        alt="Ảnh minh họa câu hỏi"
+                        alt={tr("Ảnh minh họa câu hỏi")}
                         className="max-h-56 w-auto mx-auto rounded-xl object-contain"
                       />
                       <div className="flex items-center justify-center gap-2 pt-3">
@@ -1001,14 +1003,14 @@ export default function QuestionBank() {
                           disabled={isUploadingImage}
                           className="px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
                         >
-                          Đổi ảnh khác
+                          {tr("Đổi ảnh khác")}
                         </button>
                         <button
                           type="button"
                           onClick={() => setQImageUrl(null)}
                           className="px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100"
                         >
-                          Gỡ ảnh
+                          {tr("Gỡ ảnh")}
                         </button>
                       </div>
                     </div>
@@ -1025,9 +1027,9 @@ export default function QuestionBank() {
                         <ImagePlus className="w-5 h-5" />
                       )}
                       <span className="text-xs font-extrabold">
-                        {isUploadingImage ? 'Đang tải ảnh lên...' : 'Tải ảnh lên cho đề bài'}
+                        {isUploadingImage ? tr("Đang tải ảnh lên...") : tr("Tải ảnh lên cho đề bài")}
                       </span>
-                      <span className="text-[11px] font-semibold text-slate-400">PNG, JPG, WEBP — tối đa 5MB</span>
+                      <span className="text-[11px] font-semibold text-slate-400">{tr("PNG, JPG, WEBP — tối đa 5MB")}</span>
                     </button>
                   )}
 
@@ -1038,53 +1040,53 @@ export default function QuestionBank() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-600">Đáp án A</label>
-                    <input type="text" value={qOptA} onChange={e => setQOptA(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder="Lựa chọn A..." />
+                    <label className="block text-[11px] font-bold text-slate-600">{tr("Đáp án A")}</label>
+                    <input type="text" value={qOptA} onChange={e => setQOptA(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder={tr("Lựa chọn A...")} />
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-600">Đáp án B</label>
-                    <input type="text" value={qOptB} onChange={e => setQOptB(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder="Lựa chọn B..." />
+                    <label className="block text-[11px] font-bold text-slate-600">{tr("Đáp án B")}</label>
+                    <input type="text" value={qOptB} onChange={e => setQOptB(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder={tr("Lựa chọn B...")} />
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-600">Đáp án C</label>
-                    <input type="text" value={qOptC} onChange={e => setQOptC(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder="Lựa chọn C..." />
+                    <label className="block text-[11px] font-bold text-slate-600">{tr("Đáp án C")}</label>
+                    <input type="text" value={qOptC} onChange={e => setQOptC(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder={tr("Lựa chọn C...")} />
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-600">Đáp án D</label>
-                    <input type="text" value={qOptD} onChange={e => setQOptD(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder="Lựa chọn D..." />
+                    <label className="block text-[11px] font-bold text-slate-600">{tr("Đáp án D")}</label>
+                    <input type="text" value={qOptD} onChange={e => setQOptD(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold" placeholder={tr("Lựa chọn D...")} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700">Đáp án ĐÚNG</label>
+                    <label className="block text-xs font-bold text-slate-700">{tr("Đáp án ĐÚNG")}</label>
                     <select value={qCorrect} onChange={e => setQCorrect(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold">
-                      <option value="A">Đáp án A</option>
-                      <option value="B">Đáp án B</option>
-                      <option value="C">Đáp án C</option>
-                      <option value="D">Đáp án D</option>
+                      <option value="A">{tr("Đáp án A")}</option>
+                      <option value="B">{tr("Đáp án B")}</option>
+                      <option value="C">{tr("Đáp án C")}</option>
+                      <option value="D">{tr("Đáp án D")}</option>
                     </select>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700">Mức độ nhận thức</label>
+                    <label className="block text-xs font-bold text-slate-700">{tr("Mức độ nhận thức")}</label>
                     <select value={qLevel} onChange={e => setQLevel(e.target.value as any)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold">
-                      <option value="l1">Nhận biết (Dễ)</option>
-                      <option value="l2">Thông hiểu (Trung bình)</option>
-                      <option value="l3">Vận dụng (Khó)</option>
-                      <option value="l4">Vận dụng cao (Rất khó)</option>
+                      <option value="l1">{tr("Nhận biết (Dễ)")}</option>
+                      <option value="l2">{tr("Thông hiểu (Trung bình)")}</option>
+                      <option value="l3">{tr("Vận dụng (Khó)")}</option>
+                      <option value="l4">{tr("Vận dụng cao (Rất khó)")}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700">Lời giải chi tiết</label>
+                  <label className="block text-xs font-bold text-slate-700">{tr("Lời giải chi tiết")}</label>
                   <textarea
                     value={qExplanation}
                     onChange={e => setQExplanation(e.target.value)}
                     rows={2}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold"
-                    placeholder="Giải thích lý do chọn đáp án đúng..."
+                    placeholder={tr("Giải thích lý do chọn đáp án đúng...")}
                   />
                 </div>
 
@@ -1094,14 +1096,14 @@ export default function QuestionBank() {
                     onClick={() => setIsAddQuestionOpen(false)}
                     className="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100"
                   >
-                    Hủy
+                    {tr("Hủy")}
                   </button>
                   <button
                     type="submit"
                     disabled={isSavingQuestion || isUploadingImage}
                     className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md flex items-center gap-2 disabled:opacity-60"
                   >
-                    <CheckCircle2 className="w-4 h-4" /> {isSavingQuestion ? 'Đang lưu...' : isUploadingImage ? 'Đang tải ảnh...' : 'Lưu Câu Hỏi'}
+                    <CheckCircle2 className="w-4 h-4" /> {isSavingQuestion ? tr("Đang lưu...") : isUploadingImage ? tr("Đang tải ảnh...") : tr("Lưu Câu Hỏi")}
                   </button>
                 </div>
               </form>

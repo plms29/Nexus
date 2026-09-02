@@ -1,4 +1,5 @@
 'use client';
+import { useTranslate } from '@/lib/i18n';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '@/store/useStore';
 import { TaskType, Task } from '@/lib/engine/types';
@@ -62,6 +63,7 @@ interface AssignmentFormProps {
 }
 
 export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQuestionBank }) => {
+  const tr = useTranslate();
   const { autoScheduleTask, selectedDate, classes, subjects, workmap, tasks } = useStore();
 
   const availableClasses = classes || [];
@@ -251,7 +253,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
   const handleFormSubmit = () => {
     if (step < 3) {
       if (step === 1 && !title) {
-        alert('Vui lòng nhập tên bài tập!');
+        alert(tr("Vui lòng nhập tên bài tập!"));
         return;
       }
       setStep(step + 1);
@@ -259,19 +261,19 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
     }
 
     if (!title) {
-      alert('Vui lòng nhập tên bài tập!');
+      alert(tr("Vui lòng nhập tên bài tập!"));
       setStep(1);
       return;
     }
 
     if (type === 'quiz' && availablePackages.length === 0) {
-      alert('Chưa có gói câu hỏi nào. Vui lòng chuyển sang mục "Ngân hàng câu hỏi" để tạo gói!');
+      alert(tr("Chưa có gói câu hỏi nào. Vui lòng chuyển sang mục \"Ngân hàng câu hỏi\" để tạo gói!"));
       onNavigateToQuestionBank?.();
       return;
     }
 
     if (type === 'quiz' && selectedPackageQuestions.length === 0) {
-      alert('Gói câu hỏi đã chọn chưa có câu hỏi nào. Vui lòng chọn gói khác!');
+      alert(tr("Gói câu hỏi đã chọn chưa có câu hỏi nào. Vui lòng chọn gói khác!"));
       return;
     }
     
@@ -340,7 +342,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
         deadline,
       });
       if (!res.success) {
-        alert('Không lưu được nhật ký ghi đè: ' + (res.error?.message || 'lỗi không xác định'));
+        alert(tr('Không lưu được nhật ký ghi đè: ') + (res.error?.message || tr('lỗi không xác định')));
       }
     }
 
@@ -385,15 +387,15 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
               <CalendarIcon className="w-4 h-4" />
             </div>
             <span className="text-xs font-extrabold text-slate-800">
-              Lịch Workmap Theo Dõi Tải Bài Tập (Lớp {classId})
+              {tr("Lịch Workmap Theo Dõi Tải Bài Tập (Lớp")} {classId})
             </span>
             <span className="text-[11px] font-bold text-slate-400 hidden sm:inline">
-              • Nhấn để {showWorkmapCalendar ? 'thu gọn' : 'xem lịch chi tiết'}
+              {tr("• Nhấn để")} {showWorkmapCalendar ? tr("thu gọn") : tr("xem lịch chi tiết")}
             </span>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-extrabold text-blue-600">
-            <span>{showWorkmapCalendar ? 'Thu gọn lịch' : 'Xem lịch Workmap'}</span>
+            <span>{showWorkmapCalendar ? tr("Thu gọn lịch") : tr("Xem lịch Workmap")}</span>
             {showWorkmapCalendar ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </button>
@@ -421,9 +423,9 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-emerald-950">Giao Bài Tập Thành Công!</h2>
+              <h2 className="text-lg font-black text-emerald-950">{tr("Giao Bài Tập Thành Công!")}</h2>
               <p className="text-xs font-semibold text-emerald-700">
-                Bài tập <strong className="font-extrabold text-emerald-900">"{submittedTaskTitle}"</strong> đã được lưu và xếp lịch thành công.
+                {tr("Bài tập")} <strong className="font-extrabold text-emerald-900">"{submittedTaskTitle}"</strong> {tr("đã được lưu và xếp lịch thành công.")}
               </p>
             </div>
           </div>
@@ -434,7 +436,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
               onClick={resetForm}
               className="px-5 py-2.5 rounded-xl font-extrabold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-2 transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Tạo Bài Tập Mới
+              <Plus className="w-4 h-4" /> {tr("Tạo Bài Tập Mới")}
             </button>
           </div>
         </div>
@@ -444,9 +446,9 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
               <h1 className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-blue-600" /> Tạo Bài Tập Mới
+                <BookOpen className="w-5 h-5 text-blue-600" /> {tr("Tạo Bài Tập Mới")}
               </h1>
-              <p className="text-xs text-slate-500 font-semibold">Giao bài nhanh chóng & tự động xếp lịch.</p>
+              <p className="text-xs text-slate-500 font-semibold">{tr("Giao bài nhanh chóng & tự động xếp lịch.")}</p>
             </div>
 
             {/* Compact Step Switcher */}
@@ -461,7 +463,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                   key={item.num}
                   onClick={() => {
                     if (item.num > 1 && !title) {
-                      alert('Vui lòng nhập tên bài tập trước!');
+                      alert(tr("Vui lòng nhập tên bài tập trước!"));
                       return;
                     }
                     if (item.num === 3 && isDecomposable && !hasConfirmedPrompt) {
@@ -479,7 +481,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                       : "text-slate-500 hover:text-slate-900"
                   )}
                 >
-                  {item.label}
+                  {tr(item.label)}
                 </button>
               ))}
             </div>
@@ -491,36 +493,36 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
               <div className="space-y-4 animate-in fade-in">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Lớp học</label>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">{tr("Lớp học")}</label>
                     <select
                       value={classId}
                       onChange={e => setClassId(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                     >
-                      {availableClasses.map(c => <option key={c} value={c}>Lớp {c}</option>)}
+                      {availableClasses.map(c => <option key={c} value={c}>{tr("Lớp")} {c}</option>)}
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Bộ môn</label>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">{tr("Bộ môn")}</label>
                     <select
                       value={subjectId}
                       onChange={e => setSubjectId(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                     >
-                      {availableSubjects.map(s => <option key={s} value={s}>Môn {s}</option>)}
+                      {availableSubjects.map(s => <option key={s} value={s}>{tr("Môn")} {tr(s)}</option>)}
                     </select>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Tên Bài Tập</label>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">{tr("Tên Bài Tập")}</label>
                   <input 
                     type="text" 
                     value={title} 
                     onChange={e => setTitle(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-extrabold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder:text-slate-400 placeholder:font-semibold"
-                    placeholder="Nhập tên bài tập..." 
+                    placeholder={tr("Nhập tên bài tập...")} 
                     required
                   />
                 </div>
@@ -531,7 +533,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
               <div className="space-y-4 animate-in fade-in">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Dạng Bài</label>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">{tr("Dạng Bài")}</label>
                     <select
                       value={type}
                       onChange={e => {
@@ -549,20 +551,20 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Hình Thức</label>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">{tr("Hình Thức")}</label>
                     <select
                       value={isGroup ? 'group' : 'individual'}
                       onChange={e => setIsGroup(e.target.value === 'group')}
                       disabled={isGroupOnlyType}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      <option value="individual">Cá nhân</option>
-                      <option value="group">Làm nhóm</option>
+                      <option value="individual">{tr("Cá nhân")}</option>
+                      <option value="group">{tr("Làm nhóm")}</option>
                     </select>
                     {isGroup && (
                       <p className="text-[11px] font-semibold text-indigo-700 leading-relaxed">
-                        Bài nhóm được cộng thêm {GROUP_MEETING_MINUTES} phút họp phân công và{' '}
-                        {GROUP_REHEARSAL_MINUTES} phút tập duyệt cho mỗi thành viên.
+                        {tr("Bài nhóm được cộng thêm")} {GROUP_MEETING_MINUTES} {tr("phút họp phân công và")}{' '}
+                        {GROUP_REHEARSAL_MINUTES} {tr("phút tập duyệt cho mỗi thành viên.")}
                       </p>
                     )}
                   </div>
@@ -570,12 +572,12 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <DatePicker
-                    label="Ngày Giao"
+                    label={tr("Ngày Giao")}
                     value={startDate}
                     onChange={setStartDate}
                   />
                   <DatePicker
-                    label="Hạn Nộp"
+                    label={tr("Hạn Nộp")}
                     value={deadline}
                     onChange={setDeadline}
                   />
@@ -611,7 +613,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                 {!isDecomposable && type !== 'quiz' && (
                   <div className="space-y-1.5">
                     <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-blue-600" /> Số Phút Dự Kiến
+                      <Clock className="w-4 h-4 text-blue-600" /> {tr("Số Phút Dự Kiến")}
                     </label>
                     <input 
                       type="number" value={minutes} onChange={e => setMinutes(Number(e.target.value))} min={15} step={15}
@@ -629,9 +631,9 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                           <Folder className="w-5 h-5" />
                         </div>
                         <div>
-                          <h3 className="font-extrabold text-slate-900 text-sm">Chưa có gói câu hỏi nào trong Ngân Hàng</h3>
+                          <h3 className="font-extrabold text-slate-900 text-sm">{tr("Chưa có gói câu hỏi nào trong Ngân Hàng")}</h3>
                           <p className="text-xs text-slate-600 font-semibold max-w-md mx-auto mt-0.5">
-                            Vui lòng chuyển sang mục <strong className="text-blue-700">"2. Ngân hàng câu hỏi"</strong> để tạo gói mới hoặc upload file CSV trước khi giao bài.
+                            {tr("Vui lòng chuyển sang mục")} <strong className="text-blue-700">{tr("\"2. Ngân hàng câu hỏi\"")}</strong> {tr("để tạo gói mới hoặc upload file CSV trước khi giao bài.")}
                           </p>
                         </div>
                         <button
@@ -639,14 +641,14 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                           onClick={() => onNavigateToQuestionBank?.()}
                           className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 inline-flex items-center gap-2 transition-all cursor-pointer"
                         >
-                          <Folder className="w-4 h-4" /> Sang Ngân Hàng Câu Hỏi Để Tạo Gói
+                          <Folder className="w-4 h-4" /> {tr("Sang Ngân Hàng Câu Hỏi Để Tạo Gói")}
                         </button>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         <div className="space-y-1.5">
                           <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                            Chọn Gói Câu Hỏi (Từ Supabase DB)
+                            {tr("Chọn Gói Câu Hỏi (Từ Supabase DB)")}
                           </label>
                           <select
                             value={selectedPackageId}
@@ -655,7 +657,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                           >
                             {availablePackages.map(pkg => (
                               <option key={pkg.id} value={pkg.id}>
-                                {pkg.title} • Môn {pkg.subject} - {pkg.questions_count || 0} câu hỏi
+                                {pkg.title} {tr("• Môn")} {pkg.subject} - {pkg.questions_count || 0} {tr("câu hỏi")}
                               </option>
                             ))}
                           </select>
@@ -670,7 +672,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                                 <strong className="text-sm font-black text-blue-950">{selectedPkgMeta.title}</strong>
                               </div>
                               <span className="text-xs font-extrabold text-blue-700 bg-white px-2.5 py-0.5 rounded-lg border border-blue-200 shadow-sm">
-                                {selectedPackageQuestions.length} câu hỏi sẵn có
+                                {selectedPackageQuestions.length} {tr("câu hỏi sẵn có")}
                               </span>
                             </div>
 
@@ -687,11 +689,11 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                                   <div key={level} className="bg-white p-2 rounded-xl border border-slate-200 text-center">
                                     <div className="text-[10px] font-bold text-slate-400 uppercase">{LEVEL_LABELS[level]}</div>
                                     <div className={clsx('text-sm font-black', colorByLevel[level])}>
-                                      {quizDuration.countByLevel[level]} câu
+                                      {quizDuration.countByLevel[level]} {tr("câu")}
                                     </div>
                                     <div className="text-[10px] font-bold text-slate-500 mt-0.5">
-                                      {quizDuration.minutesByLevel[level]} phút
-                                      <span className="text-slate-400 font-semibold"> ({secondsPerLevel[level]}s/câu)</span>
+                                      {quizDuration.minutesByLevel[level]} {tr("phút")}
+                                      <span className="text-slate-400 font-semibold"> ({secondsPerLevel[level]}{tr("s/câu)")}</span>
                                     </div>
                                   </div>
                                 );
@@ -701,9 +703,9 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                             {/* Tổng thời gian suy từ ma trận độ khó */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-blue-200/70 text-xs">
                               <span className="font-bold text-blue-950">
-                                Tổng theo ma trận độ khó:{' '}
+                                {tr("Tổng theo ma trận độ khó:")}{' '}
                                 <strong className="font-black">
-                                  {quizDuration.totalMinutes} phút ({quizDuration.totalLU} LU)
+                                  {quizDuration.totalMinutes} {tr("phút (")}{quizDuration.totalLU} LU)
                                 </strong>
                               </span>
                               <button
@@ -711,15 +713,14 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                                 onClick={() => setShowLevelRateEditor(!showLevelRateEditor)}
                                 className="text-[11px] font-extrabold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer text-left sm:text-right"
                               >
-                                {showLevelRateEditor ? 'Ẩn định mức' : 'Chỉnh định mức giây/câu'}
+                                {showLevelRateEditor ? tr("Ẩn định mức") : tr("Chỉnh định mức giây/câu")}
                               </button>
                             </div>
 
                             {showLevelRateEditor && (
                               <div className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2.5 animate-in fade-in duration-200">
                                 <p className="text-[11px] font-semibold text-slate-500 leading-relaxed">
-                                  Định mức mặc định lấy trung bình khoảng thời gian chuẩn cho học sinh THPT.
-                                  Thầy/cô chỉnh lại nếu đề của mình nặng hoặc nhẹ hơn thông thường.
+                                  {tr("Định mức mặc định lấy trung bình khoảng thời gian chuẩn cho học sinh THPT. Thầy/cô chỉnh lại nếu đề của mình nặng hoặc nhẹ hơn thông thường.")}
                                 </p>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                   {QUESTION_LEVELS.map(level => (
@@ -741,7 +742,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                                           }}
                                           className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-black text-blue-600 text-center focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                         />
-                                        <span className="text-[10px] font-bold text-slate-400">giây</span>
+                                        <span className="text-[10px] font-bold text-slate-400">{tr("giây")}</span>
                                       </div>
                                     </div>
                                   ))}
@@ -754,7 +755,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                                   }}
                                   className="text-[11px] font-extrabold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
                                 >
-                                  <RotateCcw className="w-3 h-3" /> Khôi phục định mức mặc định
+                                  <RotateCcw className="w-3 h-3" /> {tr("Khôi phục định mức mặc định")}
                                 </button>
                               </div>
                             )}
@@ -764,7 +765,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                         {/* Customizable Duration / Minutes */}
                         <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100">
                           <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                            <Clock className="w-4 h-4 text-blue-600" /> Thời gian làm bài dự kiến
+                            <Clock className="w-4 h-4 text-blue-600" /> {tr("Thời gian làm bài dự kiến")}
                           </label>
                           <div className="flex items-center gap-2">
                             <input
@@ -780,7 +781,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                               className="w-24 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm font-black text-blue-600 text-center shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             />
                             <span className="text-xs font-bold text-slate-500">
-                              {minutesManuallySet ? 'phút (thầy/cô tự đặt)' : 'phút (theo ma trận độ khó)'}
+                              {minutesManuallySet ? tr("phút (thầy/cô tự đặt)") : tr("phút (theo ma trận độ khó)")}
                             </span>
                             {minutesManuallySet && quizDuration.totalQuestions > 0 && (
                               <button
@@ -788,7 +789,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                                 onClick={() => setMinutesManuallySet(false)}
                                 className="text-[11px] font-extrabold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer"
                               >
-                                Tính lại theo độ khó
+                                {tr("Tính lại theo độ khó")}
                               </button>
                             )}
                           </div>
@@ -809,7 +810,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                 onClick={() => setStep(step - 1)}
                 className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4" /> Quay lại
+                <ArrowLeft className="w-4 h-4" /> {tr("Quay lại")}
               </button>
             ) : (
               <div />
@@ -820,7 +821,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                 type="button"
                 onClick={() => {
                   if (step === 1 && !title) {
-                    alert('Vui lòng nhập tên bài tập!');
+                    alert(tr("Vui lòng nhập tên bài tập!"));
                     return;
                   }
                   if (step === 2 && isDecomposable && !hasConfirmedPrompt) {
@@ -831,7 +832,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                 }}
                 className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                Tiếp tục <ArrowRight className="w-4 h-4" />
+                {tr("Tiếp tục")} <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
               <button
@@ -841,9 +842,9 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                 className="px-6 py-2.5 rounded-xl font-extrabold text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/25 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 {analyzing ? (
-                  <span className="animate-pulse">Đang xử lý...</span>
+                  <span className="animate-pulse">{tr("Đang xử lý...")}</span>
                 ) : (
-                  <><Sparkles className="w-4 h-4" /> Phân tích & Xếp lịch</>
+                  <><Sparkles className="w-4 h-4" /> {tr("Phân tích & Xếp lịch")}</>
                 )}
               </button>
             )}
@@ -857,11 +858,10 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-indigo-600" /> Phân Rã Bài Tập Bằng AI
+                <Sparkles className="w-5 h-5 text-indigo-600" /> {tr("Phân Rã Bài Tập Bằng AI")}
               </h3>
               <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                AI đã gộp các bước liên quan vào cùng ngày và né ngày lớp đã kín tải.
-                Thầy/cô đổi trực tiếp ngày của từng bước ở cột bên phải.
+                {tr("AI đã gộp các bước liên quan vào cùng ngày và né ngày lớp đã kín tải. Thầy/cô đổi trực tiếp ngày của từng bước ở cột bên phải.")}
               </p>
             </div>
 
@@ -875,7 +875,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                 className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200 shrink-0"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                Xếp Lại Theo Gợi Ý AI
+                {tr("Xếp Lại Theo Gợi Ý AI")}
               </button>
             )}
           </div>
@@ -896,9 +896,9 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                     <div className="min-w-0">
                       <div className="font-extrabold text-slate-900 text-xs">{stepItem.name}</div>
                       <div className="text-[11px] font-semibold text-slate-500">
-                        {stepItem.min} phút • {(stepItem.lu).toFixed(1)} LU
+                        {stepItem.min} {tr("phút •")} {(stepItem.lu).toFixed(1)} LU
                         {isSameDayAsPrev && (
-                          <span className="ml-1.5 text-indigo-600 font-extrabold">• Làm chung ngày với bước {idx}</span>
+                          <span className="ml-1.5 text-indigo-600 font-extrabold">{tr("• Làm chung ngày với bước")} {idx}</span>
                         )}
                       </div>
                     </div>
@@ -930,7 +930,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
             onClick={() => setShowWorkloadPreview(true)}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3 rounded-xl shadow-md flex items-center justify-center gap-2 text-xs transition-all cursor-pointer"
           >
-            <Sparkles className="w-4 h-4" /> Xem Phân Bổ Workload & Giao Bài
+            <Sparkles className="w-4 h-4" /> {tr("Xem Phân Bổ Workload & Giao Bài")}
           </button>
         </div>
       )}
@@ -984,10 +984,10 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                     </div>
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200/80">
-                        Xác Nhận Nội Dung Trước Khi AI Phân Tích
+                        {tr("Xác Nhận Nội Dung Trước Khi AI Phân Tích")}
                       </span>
                       <h3 className="text-base font-black text-slate-900 mt-1">
-                        Rà Soát Đề Bài Cho Trợ Lý AI
+                        {tr("Rà Soát Đề Bài Cho Trợ Lý AI")}
                       </h3>
                     </div>
                   </div>
@@ -1004,38 +1004,38 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
 
               <div className="p-5 space-y-4 bg-slate-50/50 text-xs">
                 <p className="text-slate-600 font-semibold leading-relaxed">
-                  Hệ thống AI sẽ dựa trên <strong>Tên Bài Tập</strong> và <strong>Nội Dung Chi Tiết</strong> dưới đây để tính số phút và tự động sinh Khung Dàn Ý. Vui lòng rà soát lại trước khi sang Bước 3:
+                  {tr("Hệ thống AI sẽ dựa trên")} <strong>{tr("Tên Bài Tập")}</strong> {tr("và")} <strong>{tr("Nội Dung Chi Tiết")}</strong> {tr("dưới đây để tính số phút và tự động sinh Khung Dàn Ý. Vui lòng rà soát lại trước khi sang Bước 3:")}
                 </p>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                    Tên bài tập / Chủ đề essay
+                    {tr("Tên bài tập / Chủ đề essay")}
                   </label>
                   <input
                     type="text"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 font-extrabold text-slate-900 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="Nhập tên bài tập..."
+                    placeholder={tr("Nhập tên bài tập...")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                    Yêu cầu chi tiết đề bài (Prompt bổ sung cho AI)
+                    {tr("Yêu cầu chi tiết đề bài (Prompt bổ sung cho AI)")}
                   </label>
                   <textarea
                     value={topic}
                     onChange={e => setTopic(e.target.value)}
                     rows={3}
                     className="w-full bg-white border border-slate-300 rounded-xl p-3 font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder:text-slate-400"
-                    placeholder="Ví dụ: Viết một bài văn nghị luận xã hội 500 từ về tư duy tự học và kỷ luật bản thân trong kỷ nguyên số..."
+                    placeholder={tr("Ví dụ: Viết một bài văn nghị luận xã hội 500 từ về tư duy tự học và kỷ luật bản thân trong kỷ nguyên số...")}
                   />
                 </div>
 
                 <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-900 font-semibold flex items-center justify-between">
-                  <span>Môn học: <strong>{subjectId}</strong> (Lớp {classId})</span>
-                  <span>Hạn nộp: <strong>{deadline}</strong></span>
+                  <span>{tr("Môn học:")} <strong>{subjectId}</strong> {tr("(Lớp")} {classId})</span>
+                  <span>{tr("Hạn nộp:")} <strong>{deadline}</strong></span>
                 </div>
               </div>
 
@@ -1045,14 +1045,14 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                   onClick={() => setShowConfirmPromptModal(false)}
                   className="px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-100 text-xs transition-colors cursor-pointer border border-slate-200"
                 >
-                  Hủy
+                  {tr("Hủy")}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
                     if (!title.trim()) {
-                      alert('Vui lòng nhập tên bài tập!');
+                      alert(tr("Vui lòng nhập tên bài tập!"));
                       return;
                     }
                     setHasConfirmedPrompt(true);
@@ -1063,7 +1063,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                   }}
                   className="px-5 py-2 rounded-xl font-extrabold text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4 text-amber-300" /> Xác Nhận & Sang Cấu Hình AI ➔
+                  <Sparkles className="w-4 h-4 text-amber-300" /> {tr("Xác Nhận & Sang Cấu Hình AI ➔")}
                 </button>
               </div>
             </motion.div>

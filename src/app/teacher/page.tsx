@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslate } from '@/lib/i18n';
+import { LanguageToggle } from '@/components/LanguageToggle';
 import { useState, useEffect } from 'react';
 import { 
   Settings2, Database, Save, Printer, Upload, BookOpen, ChevronDown, LogOut
@@ -19,6 +21,7 @@ type SidebarTab = 'setup' | 'question-bank' | 'saved-tests';
 type TaskType = 'quiz' | 'essay' | 'chart';
 
 export default function Dashboard() {
+  const tr = useTranslate();
   const [activeTab, setActiveTab] = useState<SidebarTab>('setup');
   const [taskType, setTaskType] = useState<TaskType>('quiz');
   const [pkgCount, setPkgCount] = useState<number | null>(null);
@@ -39,17 +42,18 @@ export default function Dashboard() {
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-base sm:text-lg text-slate-900 tracking-tight leading-tight">Hệ Thống Lập Kế Hoạch & Thiết Kế Đề Thi</h1>
-            <p className="text-[10px] sm:text-xs text-slate-500 font-medium mt-0.5 leading-snug hidden sm:block">Chuyên môn hóa cho Giáo viên • Quản lý cấu trúc thời gian và câu hỏi thông minh</p>
+            <h1 className="font-bold text-base sm:text-lg text-slate-900 tracking-tight leading-tight">{tr("Hệ Thống Lập Kế Hoạch & Thiết Kế Đề Thi")}</h1>
+            <p className="text-[10px] sm:text-xs text-slate-500 font-medium mt-0.5 leading-snug hidden sm:block">{tr("Chuyên môn hóa cho Giáo viên • Quản lý cấu trúc thời gian và câu hỏi thông minh")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <LanguageToggle />
           <button 
             onClick={() => router.push('/login')}
             className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-slate-500 hover:text-rose-600 font-medium px-2 sm:px-3 py-2 rounded-xl hover:bg-rose-50 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Đăng xuất</span>
+            <span className="hidden sm:inline">{tr("Đăng xuất")}</span>
           </button>
         </div>
       </header>
@@ -58,7 +62,7 @@ export default function Dashboard() {
         {/* Sidebar */}
         <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-6 sm:gap-8">
           <div>
-            <h3 className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 sm:mb-4 px-2">CÁC BƯỚC THỰC HIỆN</h3>
+            <h3 className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 sm:mb-4 px-2">{tr("CÁC BƯỚC THỰC HIỆN")}</h3>
             <nav className="space-y-1.5 sm:space-y-1 flex flex-col sm:block">
               <button 
                 onClick={() => setActiveTab('setup')}
@@ -66,7 +70,7 @@ export default function Dashboard() {
                   activeTab === 'setup' ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 )}>
                 <Settings2 className="w-5 h-5" />
-                1. Thiết lập & Sinh đề
+                {tr("1. Thiết lập & Sinh đề")}
               </button>
               
               <button 
@@ -75,11 +79,11 @@ export default function Dashboard() {
                   activeTab === 'question-bank' ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 )}>
                 <Database className="w-5 h-5" />
-                2. Ngân hàng câu hỏi
+                {tr("2. Ngân hàng câu hỏi")}
                 <span className={clsx("ml-auto text-xs py-0.5 px-2.5 rounded-full font-bold", 
                   activeTab === 'question-bank' ? "bg-blue-700 text-white" : "bg-blue-100 text-blue-600"
                 )}>
-                  {pkgCount !== null ? `${pkgCount} Gói` : 'Gói'}
+                  {pkgCount !== null ? `${pkgCount} Gói` : tr("Gói")}
                 </span>
               </button>
               
@@ -89,30 +93,30 @@ export default function Dashboard() {
                   activeTab === 'saved-tests' ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 )}>
                 <Save className="w-5 h-5" />
-                3. Quản lý bài tập & Đề thi
+                {tr("3. Quản lý bài tập & Đề thi")}
               </button>
             </nav>
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-2">XUẤT ĐỀ KIỂM TRA</h3>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-2">{tr("XUẤT ĐỀ KIỂM TRA")}</h3>
             <div className="space-y-2">
               <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-medium border border-slate-200 shadow-sm transition-colors">
                 <Printer className="w-4 h-4" />
-                In đề thi & Lời giải (PDF)
+                {tr("In đề thi & Lời giải (PDF)")}
               </button>
               <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-md shadow-indigo-500/30 transition-colors">
                 <Save className="w-4 h-4" />
-                Lưu Đề Lên Hệ Thống
+                {tr("Lưu Đề Lên Hệ Thống")}
               </button>
             </div>
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-2">NHẬP ĐỀ THI CÓ SẴN</h3>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-2">{tr("NHẬP ĐỀ THI CÓ SẴN")}</h3>
             <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 hover:border-slate-400 text-slate-600 rounded-xl text-sm font-medium transition-colors">
               <Upload className="w-4 h-4" />
-              Chọn file JSON đề thi
+              {tr("Chọn file JSON đề thi")}
             </button>
           </div>
         </aside>
