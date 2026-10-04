@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:12-22": "jiti scripts/seed-class-12-22.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

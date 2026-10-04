@@ -13,6 +13,21 @@ export interface Task {
   outline?: { id: string; text: string }[];
   essay_steps?: { id: string; stepName: string; minutes: number; note: string }[];
   is_outline_approved?: boolean;
+  /** Giáo viên bộ môn đã giao bài, để cả lớp thấy bài nào của ai */
+  teacher_name?: string | null;
+  /** Danh sách nhóm khi bài được giao theo hình thức làm nhóm */
+  student_groups?: StudentGroupPlan | null;
+}
+
+export interface StudentGroup {
+  name: string;
+  members: string[];
+}
+
+export interface StudentGroupPlan {
+  /** Số thành viên tối đa mỗi nhóm giáo viên đã chọn */
+  size: number;
+  groups: StudentGroup[];
 }
 
 export interface TaskStep {

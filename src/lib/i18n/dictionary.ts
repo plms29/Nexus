@@ -1161,6 +1161,58 @@ export const EN: Record<string, string> = {
   'THỨ NĂM': 'THURSDAY',
   'THỨ SÁU': 'FRIDAY',
   'THỨ BẢY': 'SATURDAY',
+  // ---------- AI đề xuất phương án giảm tải ----------
+  'AI Đề Xuất Phương Án Giảm Tải': 'AI Workload Relief Options',
+  'AI khuyên dùng': 'AI recommends',
+  'Gemini đang phân tích...': 'Gemini is analysing...',
+  'Gemini đã phân tích': 'Analysed by Gemini',
+  'Phân tích bằng engine ExamLoad': 'Analysed by the ExamLoad engine',
+  'Chuyển sang làm nhóm': 'Switch to group work',
+  'Dời hạn nộp': 'Move the deadline',
+  'Giảm phạm vi bài': 'Reduce the scope',
+  'Kết quả xếp thử:': 'Trial schedule:',
+  'hết quá tải': 'no overload',
+  'vẫn quá tải ngày {dates}': 'still overloaded on {dates}',
+  'hết quá tải ngày nhưng còn vượt quỹ 70/30': 'no daily overload, but the 70/30 quota is still exceeded',
+  'ngày nặng nhất': 'heaviest day',
+  'người/nhóm': 'per group',
+  'nhóm': 'groups',
+  'Nhóm': 'Group',
+  'người': 'people',
+  'LU/HS': 'LU/student',
+  'LU/thành viên': 'LU/member',
+  'Max': 'Max',
+  '✓ Không quá tải': '✓ No overload',
+  'Xáo lại': 'Reshuffle',
+  'hạn': 'due',
+  'Cần dời thêm hạn nộp sang': 'The deadline also needs to move to',
+  'để hết quá tải.': 'to clear the overload.',
+  'Quay lại làm cá nhân': 'Back to individual work',
+  'Áp dụng bản rút gọn': 'Apply the shorter version',
+  'Áp dụng: chia {count} nhóm, mỗi HS {lu} LU': 'Apply: {count} groups, {lu} LU per student',
+  '{count} nhóm ngẫu nhiên từ {students} học sinh lớp {classId}': '{count} random groups from the {students} students of class {classId}',
+  'Lớp này chưa có danh sách học sinh nên chỉ tính LU theo cỡ nhóm, chưa chia tên.':
+    'This class has no student list yet, so only the LU per group size is calculated.',
+  'Không tìm được hạn nộp an toàn trong 10 ngày tới.': 'No safe deadline found within the next 10 days.',
+  'Giữ nguyên yêu cầu bài làm cá nhân, học sinh có thêm ngày trống để hoàn thành nhưng chương trình bộ môn lùi lại một chút.':
+    'Keeps the individual assignment as is and gives students free days to finish, but pushes the subject plan back slightly.',
+  'Rút ngắn độ dài bài và bớt luận điểm phụ: nhẹ nhất cho học sinh nhưng phải chấp nhận giảm độ sâu của sản phẩm.':
+    'Shortens the essay and drops minor arguments: the lightest for students, at the cost of depth.',
+  'Bài "{title}" cần {lu} LU mỗi học sinh và đẩy Workmap lên {max} phút vào ngày {dates}. Hệ thống đã xếp thử 3 phương án trên lịch thật của lớp.':
+    '"{title}" needs {lu} LU per student and pushes the Workmap to {max} minutes on {dates}. The system trial-scheduled 3 options on the class\'s real calendar.',
+  'Mỗi học sinh vẫn tự đọc hiểu đề, chỉ viết phần được phân công rồi cùng họp và tập duyệt, nên tải giảm từ {before} xuống {after} LU mà cả lớp vẫn đạt đủ mục tiêu bài học.':
+    'Every student still reads the prompt, writes only their assigned part, then meets and rehearses with the group, so the load drops from {before} to {after} LU while the learning goals stay intact.',
+  'LU mỗi thành viên (nhóm ít nhất {members} người) = Bắt buộc {mandatory} phút + Phần được phân công {shared} phút + Điều phối {coordination} phút = {total} phút ({lu} LU), giảm từ {before} LU khi làm cá nhân.':
+    'LU per member (smallest group: {members} people) = Mandatory {mandatory} min + Assigned part {shared} min + Coordination {coordination} min = {total} min ({lu} LU), down from {before} LU individually.',
+  'GV': 'Teacher',
+
+  // ---------- Nhóm của học sinh ----------
+  'Em thuộc': 'You are in',
+  'Bài làm nhóm': 'Group assignment',
+  'Chưa tìm thấy tên em trong danh sách nhóm, hãy hỏi giáo viên bộ môn.':
+    "Your name isn't in the group list yet — please ask your subject teacher.",
+  'Xem cả': 'Show all',
+  'nhóm của lớp': 'class groups',
 };
 
 export default EN;

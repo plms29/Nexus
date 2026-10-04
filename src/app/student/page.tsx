@@ -31,9 +31,11 @@ import { useStore } from '@/store/useStore';
 import { Task } from '@/lib/engine/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import { now } from '@/lib/demo-clock';
 import { StudentOnboardingModal } from '@/components/student/StudentOnboardingModal';
 import { StudentQuizPlayerModal } from '@/components/student/StudentQuizPlayerModal';
 import { StudentWorkmapDetailModal } from '@/components/student/StudentWorkmapDetailModal';
+import { StudentGroupCard } from '@/components/student/StudentGroupCard';
 import { normalizeClassId, resolveStudentClassId } from '@/lib/class-utils';
 import { calculateLU } from '@/lib/engine/calculator';
 import { TASK_TYPE_OPTIONS, getTaskTypeLabel } from '@/lib/engine/task-templates';
@@ -120,7 +122,7 @@ export default function StudentWorkmap() {
     const currentStudentClass = resolveStudentClassId(studentProfile.classId);
     if (!currentStudentClass) return [];
 
-    const today = new Date();
+    const today = now();
     const dayNamesMap = ['CHỦ NHẬT', 'THỨ HAI', 'THỨ BA', 'THỨ TƯ', 'THỨ NĂM', 'THỨ SÁU', 'THỨ BẢY'];
     const datesToDisplay: Date[] = [];
 
@@ -699,6 +701,14 @@ export default function StudentWorkmap() {
                         <span>{tr("🎯 Đã hoàn thành")}</span>
                         <span className="font-black text-emerald-700">{quizRes.score}/{quizRes.totalQuestions} ({quizRes.percentage}%)</span>
                       </div>
+                    )}
+
+                    {task.isGroup && task.student_groups && task.student_groups.groups.length > 0 && (
+                      <StudentGroupCard
+                        plan={task.student_groups}
+                        studentName={studentProfile.name}
+                        memberMinutes={taskMinutes}
+                      />
                     )}
                   </div>
 

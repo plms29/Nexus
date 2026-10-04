@@ -180,6 +180,8 @@ export async function fetchTasks(classId?: string) {
     outline: d.outline || [],
     essay_steps: d.essay_steps || [],
     is_outline_approved: d.is_outline_approved || false,
+    teacher_name: d.teacher_name ?? null,
+    student_groups: d.student_groups ?? null,
   })) as Task[];
 }
 
@@ -223,6 +225,7 @@ export async function fetchWorkmap(classId?: string) {
 
 export async function saveScheduledTask(task: Task, entries: WorkmapEntry[]) {
   const normalizedClassId = normalizeClassId(task.class_id) || DEFAULT_CLASS_ID;
+  const { data: { user } } = await supabase.auth.getUser();
   const insertPayload: any = {
     id: task.id,
     title: task.title,
@@ -234,6 +237,8 @@ export async function saveScheduledTask(task: Task, entries: WorkmapEntry[]) {
     outline: task.outline || [],
     essay_steps: task.essay_steps || [],
     is_outline_approved: task.is_outline_approved || false,
+    teacher_name: task.teacher_name ?? user?.user_metadata?.name ?? null,
+    student_groups: task.student_groups ?? null,
   };
 
   let taskData: any = null;

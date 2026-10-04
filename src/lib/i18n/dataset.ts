@@ -213,6 +213,18 @@ export const EN_DATA: Record<string, string> = {
   'Định lý Py-ta-go phát biểu trong tam giác vuông: a^2 + b^2 = c^2.':
     'The Pythagorean theorem states that in a right triangle a^2 + b^2 = c^2.',
   'Giải bất phương trình: 2x - 4 > 0.': 'Solve the inequality 2x - 4 > 0.',
+  // ---------- Lịch demo lớp 12/22 (06/09 - 18/09) ----------
+  'Unit 2 - Urbanisation: bài tập từ vựng': 'Unit 2 — Urbanisation: vocabulary exercises',
+  'Làm bài tập từ vựng Unit 2': 'Do the Unit 2 vocabulary exercises',
+  'Viết thư xin việc theo dàn ý mẫu': 'Write an application letter from the model outline',
+  'Đọc hiểu: Ai đã đặt tên cho dòng sông?': 'Reading comprehension: "Who Named the River?"',
+  'Đọc văn bản và trả lời câu hỏi đọc hiểu': 'Read the text and answer the comprehension questions',
+  'Bài tập Python: hàm và thư viện': 'Python: functions and libraries',
+  'Đề cương ôn tập Hóa học giữa kỳ I': 'Mid-term I chemistry revision guide',
+  'Ôn tập giữa kỳ I: Di truyền học': 'Mid-term I revision: genetics',
+  'Hệ thống lại các dạng bài di truyền': 'Review all genetics problem types',
+  'Bài tập Python: tệp và xử lý dữ liệu': 'Python: files and data processing',
+  'Đọc, ghi tệp và thống kê dữ liệu': 'Read and write files and summarise the data',
 };
 
 export default EN_DATA;

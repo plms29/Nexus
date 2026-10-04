@@ -2,7 +2,8 @@
 import { useTranslate } from '@/lib/i18n';
 import React, { useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { format, addDays, isToday } from 'date-fns';
+import { format, addDays } from 'date-fns';
+import { now, isDemoToday } from '@/lib/demo-clock';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -72,7 +73,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
   const isSevenDays = visibleDaysCount === 7;
 
   // Compute displayed start date
-  const today = new Date();
+  const today = now();
   const baseDate = addDays(today, startDateOffset);
 
   // Days array for compact view
@@ -201,7 +202,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
               const isOverloaded = totalLU > MAX_LU_PER_DAY;
               const isSelected = selectedDate === dateStr;
               const dayNameVN = tr(getVietnameseDayName(dateObj, isSevenDays));
-              const isCurrentToday = isToday(dateObj);
+              const isCurrentToday = isDemoToday(dateObj);
 
               return (
                 <div
@@ -474,7 +475,7 @@ export const WorkmapCalendar: React.FC<WorkmapCalendarProps> = ({ classId }) => 
                               <h4 className="text-base font-extrabold text-slate-900">
                                 {tr(getVietnameseDayName(dObj, false))}, {format(dObj, 'dd/MM/yyyy')}
                               </h4>
-                              {isToday(dObj) && (
+                              {isDemoToday(dObj) && (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-600 text-white">
                                   {tr("Hôm nay")}
                                 </span>

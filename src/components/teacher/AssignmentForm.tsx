@@ -1,8 +1,8 @@
 'use client';
 import { useTranslate } from '@/lib/i18n';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useStore } from '@/store/useStore';
-import { TaskType, Task } from '@/lib/engine/types';
+import { TaskType, Task, StudentGroupPlan } from '@/lib/engine/types';
 import { WorkmapCalendar } from './WorkmapCalendar';
 import { WorkloadPreviewModal } from './WorkloadPreviewModal';
 import EssaySetup, { ProcessStepItem, OutlineItem } from './EssaySetup';
@@ -32,6 +32,7 @@ import {
   X
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
+import { now } from '@/lib/demo-clock';
 import clsx from 'clsx';
 import { DatePicker } from '@/components/ui/date-picker';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -55,6 +56,11 @@ import {
   buildExistingMinutesByDate,
   withPlannedDates,
 } from '@/lib/engine/step-scheduler';
+import {
+  GROUP_MEETING_STEP_NAME,
+  GROUP_REHEARSAL_STEP_NAME,
+  type GroupStep,
+} from '@/lib/engine/group-planner';
 
 const DRAFT_STORAGE_KEY = 'nexus_assignment_form_draft_v1';
 
@@ -74,10 +80,12 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
   const [title, setTitle] = useState('');
   const [type, setType] = useState<TaskType>('quiz');
   const [classId, setClassId] = useState(availableClasses[0] || DEFAULT_CLASS_ID);
+  // Giáo viên đã tự chọn lớp (hoặc khôi phục từ bản nháp) thì không tự đổi sang lớp đầu danh sách nữa
+  const hasChosenClass = useRef(false);
   const [subjectId, setSubjectId] = useState(availableSubjects.includes('Ngữ văn') ? 'Ngữ văn' : availableSubjects[0] || 'Ngữ văn');
   const [isGroup, setIsGroup] = useState(false);
-  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [deadline, setDeadline] = useState(selectedDate || format(addDays(new Date(), 2), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState(format(now(), 'yyyy-MM-dd'));
+  const [deadline, setDeadline] = useState(selectedDate || format(addDays(now(), 2), 'yyyy-MM-dd'));
   const [minutes, setMinutes] = useState(30);
 
   // Toggle Workmap Calendar view (Default collapsed to prevent scrolling)
@@ -108,6 +116,10 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
   const [showWorkloadPreview, setShowWorkloadPreview] = useState<boolean>(false);
   // Đánh dấu giáo viên đã tự đổi lịch của ít nhất một bước
   const [hasManualStepDates, setHasManualStepDates] = useState<boolean>(false);
+  // Bước làm bài cá nhân gốc, giữ lại để AI tính lại phương án khi giáo viên đổi ý
+  const [individualSteps, setIndividualSteps] = useState<BreakdownStep[]>([]);
+  // Danh sách nhóm khi giáo viên áp dụng phương án làm nhóm của AI
+  const [studentGroups, setStudentGroups] = useState<StudentGroupPlan | null>(null);
 
   // Essay Specific State (Outline & Process Steps)
   const [topic, setTopic] = useState<string>('');
@@ -164,7 +176,10 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
         const parsed = JSON.parse(saved);
         if (parsed.title) setTitle(parsed.title);
         if (parsed.type) setType(parsed.type);
-        if (parsed.classId) setClassId(parsed.classId);
+        if (parsed.classId) {
+          setClassId(parsed.classId);
+          hasChosenClass.current = true;
+        }
         if (parsed.subjectId) setSubjectId(parsed.subjectId);
         if (typeof parsed.isGroup === 'boolean') setIsGroup(parsed.isGroup);
         if (parsed.startDate) setStartDate(parsed.startDate);
@@ -198,7 +213,8 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
   }, [selectedDate]);
 
   useEffect(() => {
-    if (availableClasses.length > 0 && !classes?.includes(classId)) {
+    // Danh sách lớp tải về sau lần render đầu, nên mặc định chọn lớp đầu tiên giáo viên phụ trách
+    if (availableClasses.length > 0 && (!hasChosenClass.current || !classes?.includes(classId))) {
       setClassId(normalizeClassId(availableClasses[0]) || DEFAULT_CLASS_ID);
     }
     if (availableSubjects.length > 0 && !subjects?.includes(subjectId)) setSubjectId(availableSubjects[0]);
@@ -242,6 +258,8 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
     setSubmittedTaskTitle(null);
     setHasConfirmedPrompt(false);
     setHasManualStepDates(false);
+    setIndividualSteps([]);
+    setStudentGroups(null);
     try {
       sessionStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch (e) {}
@@ -302,6 +320,11 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
           }));
           setMinutes(generatedSteps.reduce((acc, s) => acc + s.min, 0));
         }
+        // Phần điều phối nhóm không thuộc bài làm cá nhân, bỏ ra khi lưu bản gốc
+        setIndividualSteps(generatedSteps.filter(
+          s => s.name !== GROUP_MEETING_STEP_NAME && s.name !== GROUP_REHEARSAL_STEP_NAME
+        ));
+        setStudentGroups(null);
         // Gộp các bước liên quan vào cùng một ngày thay vì rải mỗi ngày một bước,
         // đồng thời né những ngày lớp đã kín tải.
         generatedSteps = planBreakdown(generatedSteps, hasManualStepDates);
@@ -325,6 +348,7 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
       subject_id: subjectId, 
       deadline, 
       isGroup,
+      student_groups: isGroup ? studentGroups : null,
       outline: isDecomposable ? essayOutline : [],
       essay_steps: isDecomposable ? essaySteps : [],
       is_outline_approved: isDecomposable ? isOutlineApproved : false
@@ -369,6 +393,33 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
     try {
       sessionStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch (e) {}
+  };
+
+  /** Thay toàn bộ bước bằng bộ bước của phương án AI rồi xếp lại lịch từ đầu */
+  const replaceBreakdown = (steps: { name: string; min: number; lu: number; dayOffset: number }[]) => {
+    setHasManualStepDates(false);
+    setBreakdown(planBreakdown(steps.map(s => ({ ...s, date: undefined })), false));
+    setMinutes(steps.reduce((acc, s) => acc + s.min, 0));
+  };
+
+  const handleApplyGroup = (plan: StudentGroupPlan, steps: GroupStep[], newDeadline?: string) => {
+    setIsGroup(true);
+    setStudentGroups(plan);
+    replaceBreakdown(steps);
+    if (newDeadline) setDeadline(newDeadline);
+  };
+
+  const handleRevertGroup = () => {
+    setIsGroup(false);
+    setStudentGroups(null);
+    replaceBreakdown(individualSteps);
+  };
+
+  const handleApplyScope = (steps: BreakdownStep[]) => {
+    setIsGroup(false);
+    setStudentGroups(null);
+    if (isDecomposable) replaceBreakdown(steps);
+    else setMinutes(steps.reduce((acc, s) => acc + s.min, 0));
   };
 
   const selectedPkgMeta = availablePackages.find(p => p.id === selectedPackageId);
@@ -496,7 +547,10 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
                     <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">{tr("Lớp học")}</label>
                     <select
                       value={classId}
-                      onChange={e => setClassId(e.target.value)}
+                      onChange={e => {
+                        hasChosenClass.current = true;
+                        setClassId(e.target.value);
+                      }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                     >
                       {availableClasses.map(c => <option key={c} value={c}>{tr("Lớp")} {c}</option>)}
@@ -954,8 +1008,12 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({ onNavigateToQues
           isGroup
         }}
         breakdownSteps={breakdown}
+        individualSteps={isDecomposable ? individualSteps : undefined}
+        studentGroups={studentGroups}
         onUpdateDeadline={(newDeadline) => setDeadline(newDeadline)}
-        onUpdateIsGroup={(newGroup) => setIsGroup(newGroup)}
+        onApplyGroup={handleApplyGroup}
+        onRevertGroup={handleRevertGroup}
+        onApplyScope={handleApplyScope}
       />
 
       {/* 4. Prompt Confirmation Modal before AI analysis */}
