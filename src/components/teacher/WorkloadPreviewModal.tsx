@@ -2,8 +2,9 @@
 import { useTranslate, useDateLocale, useLanguage } from '@/lib/i18n';
 import React, { useMemo, useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { TaskType, WorkmapEntry } from '@/lib/engine/types';
+import { StudentGroupPlan, TaskType, WorkmapEntry } from '@/lib/engine/types';
 import { format, addDays, parseISO } from 'date-fns';
+import { now } from '@/lib/demo-clock';
 import { 
   Sparkles, 
   Calendar as CalendarIcon, 
@@ -28,6 +29,9 @@ import { getClassOrientation, normalizeClassId } from '@/lib/class-utils';
 import { checkLateAssignment, LATE_ASSIGNMENT_HOUR } from '@/lib/engine/late-assignment';
 import { getTaskTypeLabel, isDecomposableType } from '@/lib/engine/task-templates';
 import { planStepDates, buildExistingMinutesByDate } from '@/lib/engine/step-scheduler';
+import type { GroupStep, StepLike } from '@/lib/engine/group-planner';
+import type { PlanContext } from '@/lib/engine/overload-solutions';
+import { OverloadSolutions } from './OverloadSolutions';
 
 interface BreakdownStep {
   name: string;
@@ -57,10 +61,23 @@ interface WorkloadPreviewModalProps {
     isGroup: boolean;
   };
   breakdownSteps?: BreakdownStep[] | null;
+  /** Bước làm bài cá nhân gốc, dùng để AI tính lại các phương án giảm tải */
+  individualSteps?: StepLike[];
+  studentGroups?: StudentGroupPlan | null;
   onUpdateDeadline?: (newDeadline: string) => void;
-  onUpdateIsGroup?: (isGroup: boolean) => void;
+  onApplyGroup?: (plan: StudentGroupPlan, steps: GroupStep[], deadline?: string) => void;
+  onRevertGroup?: () => void;
+  onApplyScope?: (steps: BreakdownStep[]) => void;
 }
 
+
+interface ExistingItem {
+  subject: string;
+  title: string;
+  teacher: string | null;
+  lu: number;
+  min: number;
+}
 
 const formatSubjectName = (subId?: string) => {
   if (!subId) return 'Môn học';
@@ -83,8 +100,12 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
   onConfirm,
   taskData,
   breakdownSteps,
+  individualSteps,
+  studentGroups,
   onUpdateDeadline,
-  onUpdateIsGroup
+  onApplyGroup,
+  onRevertGroup,
+  onApplyScope,
 }) => {
   const tr = useTranslate();
   const dateLocale = useDateLocale();
@@ -116,7 +137,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
     if (dates.length === 0) dates.push(taskData.startDate);
 
     // Map existing workmap entries for class
-    const existingByDate: Record<string, { totalLU: number; totalMin: number; items: { subject: string; title: string; lu: number; min: number }[] }> = {};
+    const existingByDate: Record<string, { totalLU: number; totalMin: number; items: ExistingItem[] }> = {};
     
     dates.forEach(d => {
       const classEntries = workmap.filter(e => {
@@ -133,6 +154,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
         return {
           subject: tr(formatSubjectName(t?.subject_id)),
           title: tr(t?.title || e.step_name || 'Bài tập khác'),
+          teacher: t?.teacher_name || null,
           lu: e.lu,
           min: Number(e.minutes) || Math.round(e.lu * 30)
         };
@@ -147,7 +169,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
       dayOfWeek: string;
       newSteps: { name: string; min: number; lu: number }[];
       existingLU: number;
-      existingItems: { subject: string; title: string; lu: number; min: number }[];
+      existingItems: ExistingItem[];
     }> = {};
 
     if (breakdownSteps && breakdownSteps.length > 0) {
@@ -275,7 +297,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
 
   // Luật giao bài sau 19:00: hôm đó không còn là ngày làm bài hợp lệ
   const lateCheck = useMemo(
-    () => (isOpen ? checkLateAssignment(taskData.startDate, taskData.deadline, new Date(), lang) : null),
+    () => (isOpen ? checkLateAssignment(taskData.startDate, taskData.deadline, now(), lang) : null),
     [isOpen, taskData.startDate, taskData.deadline, lang]
   );
 
@@ -293,6 +315,30 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
     excessMinutes > 30 || exceedsGroupQuota || lateCheck?.isDeadlineTooTight ? 'critical' : 'soft';
 
   const isDecomposable = isDecomposableType(taskData.type);
+
+  // Bối cảnh lớp để AI xếp thử từng phương án giảm tải trên Workmap thật
+  const solutionContext = useMemo<PlanContext | null>(() => {
+    if (!isOpen) return null;
+    const classId = normalizeClassId(taskData.classId);
+    const matchClass = (t?: { class_id: string }) => !t || normalizeClassId(t.class_id) === classId;
+    return {
+      startDate: taskData.startDate,
+      deadline: taskData.deadline,
+      existingMinutesByDate: buildExistingMinutesByDate(workmap, tasks, matchClass),
+      existingEntries: workmap.filter(e => matchClass(tasks.find(t => t.id === e.task_id))),
+      subjectGroup: getSubjectGroup(taskData.subjectId),
+      orientation: getClassOrientation(classId),
+    };
+  }, [isOpen, taskData.classId, taskData.startDate, taskData.deadline, taskData.subjectId, workmap, tasks]);
+
+  const solutionSteps = useMemo<StepLike[]>(
+    () => individualSteps && individualSteps.length > 0
+      ? individualSteps
+      : [{ name: taskData.title, min: taskData.minutes }],
+    [individualSteps, taskData.title, taskData.minutes]
+  );
+
+  const showSolutions = !!solutionContext && (hasAnyCritical || exceedsGroupQuota || !!studentGroups);
   const suggestedNewDeadlineObj = useMemo(() => {
     if (!taskData.deadline) return null;
     try {
@@ -311,7 +357,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div key="workload-preview" className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -389,6 +435,9 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                 <div className="font-extrabold text-slate-900 mt-0.5 flex items-center gap-1">
                   {taskData.isGroup ? <Users className="w-3.5 h-3.5 text-indigo-600" /> : <User className="w-3.5 h-3.5 text-emerald-600" />}
                   {taskData.isGroup ? tr("Làm nhóm") : tr("Cá nhân")}
+                  {taskData.isGroup && studentGroups && studentGroups.groups.length > 0 && (
+                    <span className="text-slate-500 font-bold">• {studentGroups.groups.length} {tr("nhóm")}</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -605,91 +654,19 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
               </div>
             )}
 
-            {/* ExamLoad Overload Processing Workflow Solutions Panel */}
-            {hasAnyCritical && (
-              <div className="bg-gradient-to-br from-rose-50/90 via-amber-50/40 to-white rounded-3xl p-5 border border-rose-200/90 shadow-sm space-y-3.5 animate-in fade-in duration-300">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-100 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black text-xs shadow-sm shrink-0">
-                      ⚡
-                    </div>
-                    <div>
-                      <h4 className="font-black text-rose-950 text-sm flex items-center gap-2">
-                        {tr("Quy Trình Xử Lý Quá Tải Workmap (ExamLoad Workflow)")}
-                      </h4>
-                      <span className="text-[11px] font-semibold text-rose-700/80">
-                        {isDecomposable 
-                          ? tr("Dạng bài chia nhỏ (Decomposable): Đã tự động phân rải các bước qua các ngày thấp tải.")
-                          : tr("Dạng bài nguyên khối (Atomic): Bạn nên dời hạn nộp hoặc chuyển sang làm nhóm.")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Workflow Solution Actions */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {/* Option A: Recommend new deadline */}
-                  {suggestedNewDeadlineObj && onUpdateDeadline && (
-                    <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2.5 flex flex-col justify-between hover:border-blue-300 transition-all">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-black text-slate-900 flex items-center gap-1.5 text-xs">
-                            <CalendarIcon className="w-4 h-4 text-blue-600" />
-                            {tr("1. Dời Hạn Nộp Sang Ngày Tải Nhẹ")}
-                          </span>
-                          <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-                            {tr("Khuyên dùng")}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                          {tr("Tự động gia hạn nộp đến")} <strong className="text-blue-900 font-extrabold">{suggestedNewDeadlineObj.formatted}</strong> {tr("để hạ mức tải học sinh về an toàn.")}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => onUpdateDeadline(suggestedNewDeadlineObj.isoStr)}
-                        className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                        {tr("Đổi Hạn Nộp Sang")} {suggestedNewDeadlineObj.formatted}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Option B: Group Work / Scope Reduction */}
-                  {onUpdateIsGroup && (
-                    <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2.5 flex flex-col justify-between hover:border-indigo-300 transition-all">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-black text-slate-900 flex items-center gap-1.5 text-xs">
-                            <Users className="w-4 h-4 text-indigo-600" />
-                            {tr("2. Chuyển Hình Thức Làm Nhóm")}
-                          </span>
-                          <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
-                            {tr("Giảm 50% LU")}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                          {tr("Chuyển sang nhóm 3-4 học sinh giúp chia sẻ công việc, giảm 50% thời lượng cần thiết của từng em.")}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => onUpdateIsGroup(!taskData.isGroup)}
-                        className={clsx(
-                          "w-full py-2 px-3 rounded-xl font-extrabold shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs border",
-                          taskData.isGroup 
-                            ? "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100" 
-                            : "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent"
-                        )}
-                      >
-                        <Users className="w-3.5 h-3.5" />
-                        {taskData.isGroup ? tr("✓ Đã Bật Làm Nhóm (Đã giảm 50% LU)") : tr("Chuyển Sang Làm Nhóm (Giảm 50% LU)")}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+            {/* AI đề xuất phương án giảm tải: làm nhóm, dời hạn, giảm phạm vi */}
+            {showSolutions && solutionContext && onUpdateDeadline && onApplyGroup && onRevertGroup && onApplyScope && (
+              <OverloadSolutions
+                individualSteps={solutionSteps}
+                ctx={solutionContext}
+                task={{ title: taskData.title, subjectId: taskData.subjectId, type: taskData.type, classId: taskData.classId }}
+                allowGroup={isDecomposable}
+                appliedGroup={studentGroups ?? null}
+                onApplyGroup={onApplyGroup}
+                onRevertGroup={onRevertGroup}
+                onApplyDeadline={onUpdateDeadline}
+                onApplyScope={onApplyScope}
+              />
             )}
 
             {/* Workmap Allocation Timeline Header */}
@@ -760,7 +737,9 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
                                 {exItem.subject}
                               </span>
                               <span className="font-extrabold text-slate-800">{tr(exItem.title)}</span>
-                              <span className="text-[11px] text-slate-400 font-medium italic ml-1.5">{tr("(Bài tập đã có)")}</span>
+                              <span className="text-[11px] text-slate-400 font-medium italic ml-1.5">
+                                {exItem.teacher ? `(${tr("GV")} ${exItem.teacher})` : tr("(Bài tập đã có)")}
+                              </span>
                             </div>
                           </div>
                           <span className="text-xs font-extrabold text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-xl shrink-0 shadow-2xs">
@@ -872,7 +851,7 @@ export const WorkloadPreviewModal: React.FC<WorkloadPreviewModalProps> = ({
       </div>
 
       {/* Override Audit Log Reason Modal */}
-      <AnimatePresence>
+      <AnimatePresence key="override-reason">
         {showOverrideModal && (
           <div className="fixed inset-0 z-60 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
             <motion.div

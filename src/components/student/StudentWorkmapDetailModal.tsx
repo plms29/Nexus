@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { format, addDays } from 'date-fns';
+import { now } from '@/lib/demo-clock';
 import { useStore } from '@/store/useStore';
 import { Task } from '@/lib/engine/types';
 import { normalizeClassId, resolveStudentClassId } from '@/lib/class-utils';
@@ -51,7 +52,7 @@ export const StudentWorkmapDetailModal: React.FC<StudentWorkmapDetailModalProps>
   const dayItems = useMemo(() => {
     if (!isOpen) return [];
 
-    const today = new Date();
+    const today = now();
     const dates: Date[] = [];
 
     if (timeRange === '1-past') {

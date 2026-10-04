@@ -6,6 +6,7 @@ import type { OverloadResult } from '../lib/engine/detector';
 import { decideIntervention } from '../lib/engine/intervention';
 import type { InterventionDecision } from '../lib/engine/intervention';
 import { format } from 'date-fns';
+import { now } from '../lib/demo-clock';
 import { fetchTasks, fetchWorkmap, saveScheduledTask, updateTaskInDb, deleteTaskFromDb } from '../lib/api';
 import { DEFAULT_CLASS_ID, normalizeClassId, normalizeClassList, resolveStudentClassId } from '../lib/class-utils';
 import { getSubjectGroup } from '../lib/engine/subject-group';
@@ -70,7 +71,7 @@ export const useStore = create<AppState>((set, get) => ({
   workmap: [],
   tasks: [],
   auditLogs: [],
-  selectedDate: format(new Date(), 'yyyy-MM-dd'),
+  selectedDate: format(now(), 'yyyy-MM-dd'),
   overloadAlert: null,
   interventionProposal: null,
   user: null,

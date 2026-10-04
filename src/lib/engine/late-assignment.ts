@@ -1,4 +1,5 @@
 import { format, addDays, parseISO, isBefore } from 'date-fns';
+import { now as demoNow } from '../demo-clock';
 import { fill, type Lang } from '../i18n/translate';
 
 /** Sau giờ này thì ngày hôm đó coi như đã hết quỹ thời gian tự học của học sinh */
@@ -28,7 +29,7 @@ export interface LateAssignmentCheck {
 export const checkLateAssignment = (
   startDate: string,
   deadline: string,
-  now: Date = new Date(),
+  now: Date = demoNow(),
   lang: Lang = 'vi'
 ): LateAssignmentCheck => {
   const today = format(now, 'yyyy-MM-dd');

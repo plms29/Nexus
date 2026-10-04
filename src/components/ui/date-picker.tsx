@@ -15,8 +15,8 @@ import {
   addMonths, 
   subMonths, 
   addDays, 
-  isToday 
 } from 'date-fns';
+import { now, isDemoToday } from '@/lib/demo-clock';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
@@ -57,7 +57,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   }, [isOpen]);
 
   // Current selected date object
-  const selectedDate = value ? parse(value, 'yyyy-MM-dd', new Date()) : new Date();
+  const selectedDate = value ? parse(value, 'yyyy-MM-dd', now()) : now();
 
   // Month being viewed in popover
   const [currentMonth, setCurrentMonth] = useState<Date>(selectedDate);
@@ -65,7 +65,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   // Sync currentMonth when value changes externally
   useEffect(() => {
     if (value) {
-      const parsed = parse(value, 'yyyy-MM-dd', new Date());
+      const parsed = parse(value, 'yyyy-MM-dd', now());
       if (!isNaN(parsed.getTime())) {
         setCurrentMonth(parsed);
       }
@@ -96,7 +96,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   const handleQuickPreset = (offsetDays: number) => {
-    const newDate = addDays(new Date(), offsetDays);
+    const newDate = addDays(now(), offsetDays);
     onChange(format(newDate, 'yyyy-MM-dd'));
     setCurrentMonth(newDate);
     setIsOpen(false);
@@ -132,7 +132,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               {displayFormattedDate}
             </div>
             <div className="text-[11px] text-slate-500 font-medium">
-              {isToday(selectedDate) ? tr("Hôm nay") : format(selectedDate, 'EEEE', { locale: dateLocale })}
+              {isDemoToday(selectedDate) ? tr("Hôm nay") : format(selectedDate, 'EEEE', { locale: dateLocale })}
             </div>
           </div>
         </div>
@@ -173,7 +173,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const today = new Date();
+                    const today = now();
                     setCurrentMonth(today);
                     onChange(format(today, 'yyyy-MM-dd'));
                     setIsOpen(false);
@@ -206,7 +206,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               {daysGrid.map((day, idx) => {
                 const isSelected = isSameDay(day, selectedDate);
                 const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isCurrentDay = isToday(day);
+                const isCurrentDay = isDemoToday(day);
 
                 return (
                   <button
